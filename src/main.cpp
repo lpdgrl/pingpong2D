@@ -6,6 +6,8 @@
 #include "shader.hpp"
 
 float proccessKeyOfMove(GLFWwindow* window);
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void processInput(GLFWwindow* window);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -29,7 +31,8 @@ int main () {
     }
 
     glfwMakeContextCurrent(window);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     // glad: load all OpenGL function pointers
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -87,6 +90,8 @@ int main () {
 
     // render loop
     while (!glfwWindowShouldClose(window)) {
+        processInput(window);
+        
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -94,11 +99,18 @@ int main () {
         glBindVertexArray(VAO);
         move = proccessKeyOfMove(window);
 
-        glm::mat4 projection = glm::perspective(glm::radians(50.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        shader.setMat4("projection", projection);
         std::cout << "move: " << move << std::endl;
-        glm ::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, move, -3.0f));
+        glm::mat4 rotate_mode = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+        
+        model = model * rotate_mode;
+
+        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
+        shader.setMat4("projection", projection);
         shader.setMat4("model", model);
+        shader.setMat4("view", view);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -111,7 +123,7 @@ int main () {
 }
 
 float proccessKeyOfMove(GLFWwindow* window) {
-    float velocity = 0.5f;
+    float velocity = 10.0f;
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
         move += 0.1f * velocity;
     }
@@ -119,4 +131,19 @@ float proccessKeyOfMove(GLFWwindow* window) {
         move -= 0.1 * velocity;
     }
     return move;
+}
+
+
+// callback function for resizing window size
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
+
+void processInput(GLFWwindow* window) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    {
+        glfwSetWindowShouldClose(window, true);
+        std::cout << "Window been closed!" << std::endl;
+    }
 }
