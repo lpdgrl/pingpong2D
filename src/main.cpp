@@ -11,8 +11,8 @@ float proccessKeyOfMove(GLFWwindow* window);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 float detectPlayerColOfEndScreen(float pos);
-float moveBallX(float posX, float curMoveBall);
-float moveBallY(float posY, float curMoveBall);
+float moveBallX(float posX, float velocity, int direction);
+float moveBallY(float posY, float velocity, int direction);
 float randomFloat(float min, float max);
 int randomNegativeInt(int min, int max);
 void startGame();
@@ -32,12 +32,14 @@ float mvBallX = 0.01f;
 float mvBallY = 0.01f;
 float currentBallPosX = 0.0f;
 float currentBallPosY = 0.0f;
-float ballPosX = 0.0f;
-float ballPosY = 0.0f;
-float velocityBall = 0.055f;
+float ballPosX = 0.1f;
+float ballPosY = 0.1f;
+float velocityBall = 0.012f;
 float velocityPlayer = 0.25f;
 bool isStartedGame = false;
 bool firstMoveBall = true;
+
+glm::vec3 Velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 
 int main () {
     glfwInit();
@@ -61,7 +63,8 @@ int main () {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         return -1;
     }  
-    
+
+    glEnable(GL_DEPTH_TEST);
     Shader shader(PATH_TO_FILE_VERTEX_SHADER, PATH_TO_FILE_FRAGMENT_SHADER);
 
     float verticesPlayer[] = {
@@ -160,13 +163,19 @@ int main () {
     
     float angleBall = randomFloat(5.0f, 360.0f);
     std::cout << "angleBall: " << angleBall << std::endl;
+
+    glm::vec3 scaleBall = glm::vec3(1.0f, 0.2f, 0.0f);
+    glm::vec3 positionBall = glm::vec3(0.1f, 0.1f, 0.0f);
+    glm::vec3 rotateBall = glm::vec3(0.0f, 0.0f, 1.0f);
+
+    int random = 0;
+
     // render loop
     while (!glfwWindowShouldClose(window)) {
-
         processInput(window);
         
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.use();
         glBindVertexArray(VAO);
@@ -196,46 +205,41 @@ int main () {
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureball);
-        
-        shader_ball.use();
+
         if (isStartedGame) {
             if (firstMoveBall) {
-                int random = randomNegativeInt(-1.0f, 1.0f);
-                currentBallPosX = moveBallX(ballPosX, (randomFloat(1.0f, -1.0f) * random) / angleBall);
-                currentBallPosY = moveBallY(ballPosY, (randomFloat(-0.5f, 0.5f) * random) / angleBall);
-                ballPosX = currentBallPosX;
-                ballPosY = currentBallPosY;
+                Velocity = glm::vec3(0.012f, randomFloat(-0.01f, 0.01f), 0.0f);
+                std::cout << "Velocity.x: " << Velocity.x << std::endl;
+                std::cout << "Velocity.y: " << Velocity.y << std::endl;
+                random = randomNegativeInt(-1.0f, 1.0f);
+                std::cout << "random " << random << std::endl;
+
+                positionBall.x = moveBallX(positionBall.x, Velocity.x, random);
+                positionBall.y = moveBallX(positionBall.y, Velocity.y, random);
                 firstMoveBall = false;
             }
             else {
-                currentBallPosX = moveBallX(ballPosX, currentBallPosX);
-                currentBallPosY = moveBallY(ballPosY, currentBallPosY);
-                ballPosX = currentBallPosX;
-                ballPosY = currentBallPosY;
+                positionBall.x = moveBallX(positionBall.x, Velocity.x, random);
+                positionBall.y = moveBallX(positionBall.y, Velocity.y, random);
             }
         }
         else {
             if (!firstMoveBall) {
                 angleBall = randomFloat(50.0f, 360.0f);
             }
-            currentBallPosX = ballPosX = 0.0f;
-            currentBallPosY = ballPosY = 0.0f;
-            mvBallX = 0.0f;
-            mvBallY = 0.0f;
-            firstMoveBall = true;
-            
+            positionBall.x = 0.01f;
+            positionBall.y = 0.01f;
+            firstMoveBall = true;   
         }
-
-        glm::vec3 scaleBall = glm::vec3(1.0f, 0.2f, 0.0f);
-        glm::vec3 positionBall = glm::vec3(ballPosX, ballPosY, 0.0f);
-        glm::vec3 rotateBall = glm::vec3(0.0f, 0.0f, 1.0f);
-    
+        
         glm::mat4 scaleMatrixBall = glm::scale(glm::mat4(1.0f), scaleBall);
         glm::mat4 rotateMatrixBall = glm::rotate(glm::mat4(1.0f), glm::radians(angleBall), rotateBall);
         glm::mat4 translateMatrixBall = glm::translate(glm::mat4(1.0f), positionBall);
 
         glm::mat4 modelMatrixBall = translateMatrixBall * rotateMatrixBall * scaleMatrixBall;
         glm::mat4 matrixProductBall = projection * view * modelMatrixBall;
+
+        shader_ball.use();
         shader_ball.setMat4("matrixProductBall", matrixProductBall);
 
         glBindVertexArray(VAO_ball);
@@ -257,14 +261,24 @@ void resetGame() {
     isStartedGame = false;
 }
 
-float moveBallX(float posX, float curMoveBall) {
-    curMoveBall += posX * velocityBall;
-    return curMoveBall;
+float moveBallX(float posX, float velocity, int direction) {
+    if (direction == 1) {
+        posX += velocity;
+    }
+    else if (direction == -1) {
+        posX -= velocity;
+    }
+    return posX;
 }
 
-float moveBallY(float posY, float curMoveBall) {
-    curMoveBall += posY * velocityBall;
-    return curMoveBall;
+float moveBallY(float posY, float velocity, int direction) {
+    if (direction == 1) {
+        posY += velocity;
+    }
+    else if (direction == -1) {
+        posY -= velocity;
+    }
+    return posY;
 }
 
 float detectCollisionBallY(float posY) {
