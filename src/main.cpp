@@ -16,6 +16,9 @@ float moveBallY(float posY, float velocity, int direction);
 float randomFloat(float min, float max);
 int randomNegativeInt(int min, int max);
 void startGame();
+void resetGame();
+void moveBall(glm::vec3 &Velocity, glm::vec3 &positionBall, int &direction, float &angleBall);
+void detectCollisionEndScreenBall(glm::vec3 &positionBall, glm::vec3 &Velocity);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -161,7 +164,7 @@ int main () {
     shader_ball.use();
     shader_ball.setInt("textureball", 0);
     
-    float angleBall = randomFloat(5.0f, 360.0f);
+    float angleBall = randomFloat(0.0f, 360.0f);
     std::cout << "angleBall: " << angleBall << std::endl;
 
     glm::vec3 scaleBall = glm::vec3(1.0f, 0.2f, 0.0f);
@@ -184,12 +187,13 @@ int main () {
         // matrix of view and projection
         glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-
-        // model of player
+        
+        // vec of player
         glm::vec3 scalePlayer = glm::vec3(0.2f, 0.8f, 1.0f);
         glm::vec3 positionPlayer = glm::vec3(-1.0f, detectPlayerColOfEndScreen(movePlayer), 0.0f);
         glm::vec3 rotatePlayer = glm::vec3(0.0f, 0.0f, 1.0f);
 
+        // model of player
         glm::mat4 scaleMatrixPlayer = glm::scale(glm::mat4(1.0f), scalePlayer);
         glm::mat4 rotateMatrixPlayer = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), rotatePlayer);
         glm::mat4 translateMatrixPlayer = glm::translate(glm::mat4(1.0f), positionPlayer);
@@ -197,8 +201,8 @@ int main () {
         // std::cout << "pos.y = " << position.y << std::endl;
 
         glm::mat4 modelMatrixPlayer = translateMatrixPlayer * rotateMatrixPlayer * scaleMatrixPlayer;
-        
         glm::mat4 matrixProductPlayer = projection * view * modelMatrixPlayer;
+        
         shader.setMat4("matrixProductPlayer", matrixProductPlayer);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -206,31 +210,9 @@ int main () {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureball);
 
-        if (isStartedGame) {
-            if (firstMoveBall) {
-                Velocity = glm::vec3(0.012f, randomFloat(-0.01f, 0.01f), 0.0f);
-                std::cout << "Velocity.x: " << Velocity.x << std::endl;
-                std::cout << "Velocity.y: " << Velocity.y << std::endl;
-                random = randomNegativeInt(-1.0f, 1.0f);
-                std::cout << "random " << random << std::endl;
-
-                positionBall.x = moveBallX(positionBall.x, Velocity.x, random);
-                positionBall.y = moveBallX(positionBall.y, Velocity.y, random);
-                firstMoveBall = false;
-            }
-            else {
-                positionBall.x = moveBallX(positionBall.x, Velocity.x, random);
-                positionBall.y = moveBallX(positionBall.y, Velocity.y, random);
-            }
-        }
-        else {
-            if (!firstMoveBall) {
-                angleBall = randomFloat(50.0f, 360.0f);
-            }
-            positionBall.x = 0.01f;
-            positionBall.y = 0.01f;
-            firstMoveBall = true;   
-        }
+        // moving ball
+        moveBall(Velocity, positionBall, random, angleBall);
+        detectCollisionEndScreenBall(positionBall, Velocity);
         
         glm::mat4 scaleMatrixBall = glm::scale(glm::mat4(1.0f), scaleBall);
         glm::mat4 rotateMatrixBall = glm::rotate(glm::mat4(1.0f), glm::radians(angleBall), rotateBall);
@@ -253,12 +235,51 @@ int main () {
     return 0;
 }
 
+void moveBall(glm::vec3 &Velocity, glm::vec3 &positionBall, int &direction, float &angleBall) {
+    if (isStartedGame) {
+        if (firstMoveBall) {
+            Velocity = glm::vec3(0.012f, randomFloat(-0.05f, 0.05f), 0.0f);
+            std::cout << "Velocity.x: " << Velocity.x << std::endl;
+            std::cout << "Velocity.y: " << Velocity.y << std::endl;
+            direction = randomNegativeInt(-1.0f, 1.0f);
+            std::cout << "random " << random << std::endl;
+
+            positionBall.x = moveBallX(positionBall.x, Velocity.x, direction);
+            positionBall.y = moveBallX(positionBall.y, Velocity.y, direction);
+            firstMoveBall = false;
+        }
+        else {
+            positionBall.x = moveBallX(positionBall.x, Velocity.x, direction);
+            positionBall.y = moveBallX(positionBall.y, Velocity.y, direction);
+        }
+    }
+    else {
+        if (!firstMoveBall) {
+            angleBall = randomFloat(0.0f, 360.0f);
+        }
+        positionBall.x = 0.01f;
+        positionBall.y = 0.01f;
+        firstMoveBall = true;   
+    }
+}
+
 void startGame() {
     isStartedGame = true;
 }
 
 void resetGame() {
     isStartedGame = false;
+}
+
+void detectCollisionEndScreenBall(glm::vec3 &positionBall, glm::vec3 &Velocity) {
+    if (positionBall.y >= 0.8f) {
+        positionBall.y = 0.75f;
+        Velocity.y *= -1;
+    }
+    else if (positionBall.y <= -0.8f) {
+        positionBall.y = -0.75f;
+        Velocity.y *= -1;
+    }
 }
 
 float moveBallX(float posX, float velocity, int direction) {
@@ -305,10 +326,10 @@ float detectPlayerColOfEndScreen(float pos) {
 
 float proccessKeyOfMove(GLFWwindow* window) {
     float velocity = 0.25f;
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         movePlayer += 0.1f * velocity;
     }
-    else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+    else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         movePlayer -= 0.1 * velocity;
     }
     return movePlayer;
