@@ -19,6 +19,7 @@ void startGame();
 void resetGame();
 void moveBall(glm::vec3 &Velocity, glm::vec3 &positionBall, int &direction, float &angleBall);
 void detectCollisionEndScreenBall(glm::vec3 &positionBall, glm::vec3 &Velocity);
+void detectCollisionPlayerAndBall(glm::vec3 &positionPlayer, glm::vec3 &positionBall, glm::vec3 &Velocity);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -68,6 +69,7 @@ int main () {
     }  
 
     glEnable(GL_DEPTH_TEST);
+    
     Shader shader(PATH_TO_FILE_VERTEX_SHADER, PATH_TO_FILE_FRAGMENT_SHADER);
 
     float verticesPlayer[] = {
@@ -171,7 +173,14 @@ int main () {
     glm::vec3 positionBall = glm::vec3(0.1f, 0.1f, 0.0f);
     glm::vec3 rotateBall = glm::vec3(0.0f, 0.0f, 1.0f);
 
-    int random = 0;
+    // vec of player
+    glm::vec3 scalePlayer = glm::vec3(0.2f, 0.8f, 1.0f);
+    glm::vec3 positionPlayer = glm::vec3(-1.0f, detectPlayerColOfEndScreen(movePlayer), 0.0f);
+    glm::vec3 rotatePlayer = glm::vec3(0.0f, 0.0f, 1.0f);
+
+    glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+    int direction = 0;
 
     // render loop
     while (!glfwWindowShouldClose(window)) {
@@ -188,17 +197,11 @@ int main () {
         glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         
-        // vec of player
-        glm::vec3 scalePlayer = glm::vec3(0.2f, 0.8f, 1.0f);
-        glm::vec3 positionPlayer = glm::vec3(-1.0f, detectPlayerColOfEndScreen(movePlayer), 0.0f);
-        glm::vec3 rotatePlayer = glm::vec3(0.0f, 0.0f, 1.0f);
-
         // model of player
+        positionPlayer.y = detectPlayerColOfEndScreen(movePlayer);
         glm::mat4 scaleMatrixPlayer = glm::scale(glm::mat4(1.0f), scalePlayer);
         glm::mat4 rotateMatrixPlayer = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), rotatePlayer);
         glm::mat4 translateMatrixPlayer = glm::translate(glm::mat4(1.0f), positionPlayer);
-
-        // std::cout << "pos.y = " << position.y << std::endl;
 
         glm::mat4 modelMatrixPlayer = translateMatrixPlayer * rotateMatrixPlayer * scaleMatrixPlayer;
         glm::mat4 matrixProductPlayer = projection * view * modelMatrixPlayer;
@@ -211,8 +214,17 @@ int main () {
         glBindTexture(GL_TEXTURE_2D, textureball);
 
         // moving ball
-        moveBall(Velocity, positionBall, random, angleBall);
+        int xPlayer = (positionPlayer.x + 1) * positionPlayer.x * SCR_WIDTH;
+        int yPlayer = (positionPlayer.y + 1) * positionPlayer.y * SCR_HEIGHT;
+        std::cout << "xPos player: " << xPlayer << " yPos player: " << yPlayer << std::endl;
+
+        int xBall = (positionBall.x + 1) * positionBall.x * SCR_WIDTH;
+        int yBall = (positionBall.y + 1) * positionBall.y * SCR_HEIGHT;
+        std::cout << "xPos ball: " << xBall << " yPos ball: " << xBall << std::endl;
+
+        detectCollisionPlayerAndBall(positionPlayer, positionBall, Velocity);
         detectCollisionEndScreenBall(positionBall, Velocity);
+        moveBall(Velocity, positionBall, direction, angleBall);
         
         glm::mat4 scaleMatrixBall = glm::scale(glm::mat4(1.0f), scaleBall);
         glm::mat4 rotateMatrixBall = glm::rotate(glm::mat4(1.0f), glm::radians(angleBall), rotateBall);
@@ -238,11 +250,14 @@ int main () {
 void moveBall(glm::vec3 &Velocity, glm::vec3 &positionBall, int &direction, float &angleBall) {
     if (isStartedGame) {
         if (firstMoveBall) {
-            Velocity = glm::vec3(0.012f, randomFloat(-0.05f, 0.05f), 0.0f);
+            Velocity = glm::vec3(0.012f, randomFloat(-0.01f, 0.01f), 0.0f);
+            direction = randomNegativeInt(-1.0f, 1.0f);
+
             std::cout << "Velocity.x: " << Velocity.x << std::endl;
             std::cout << "Velocity.y: " << Velocity.y << std::endl;
-            direction = randomNegativeInt(-1.0f, 1.0f);
-            std::cout << "random " << random << std::endl;
+
+            std::cout << "AngleBall: " << glm::radians(angleBall) << std::endl;
+            std::cout << "Direction: " << direction << std::endl;
 
             positionBall.x = moveBallX(positionBall.x, Velocity.x, direction);
             positionBall.y = moveBallX(positionBall.y, Velocity.y, direction);
@@ -269,6 +284,12 @@ void startGame() {
 
 void resetGame() {
     isStartedGame = false;
+}
+
+void detectCollisionPlayerAndBall(glm::vec3 &positionPlayer, glm::vec3 &positionBall, glm::vec3 &Velocity) {
+    if (positionPlayer.y == positionBall.y + 10.0f && positionPlayer.x + 10.0f == positionBall.x + 10.0f ) {
+        Velocity.y *= -1;
+    }
 }
 
 void detectCollisionEndScreenBall(glm::vec3 &positionBall, glm::vec3 &Velocity) {
