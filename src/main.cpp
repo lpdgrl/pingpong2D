@@ -20,6 +20,8 @@ void resetGame();
 void moveBall(glm::vec3 &Velocity, glm::vec3 &positionBall, int &direction, float &angleBall);
 void detectCollisionEndScreenBall(glm::vec3 &positionBall, glm::vec3 &Velocity);
 void detectCollisionPlayerAndBall(glm::vec3 &positionPlayer, glm::vec3 &positionBall, glm::vec3 &Velocity);
+void moveCamera(GLFWwindow* window, glm::vec3 &posCamera);
+void changeFOV(GLFWwindow* window, float &fov);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -174,9 +176,12 @@ int main () {
     glm::vec3 rotateBall = glm::vec3(0.0f, 0.0f, 1.0f);
 
     // vec of player
-    glm::vec3 scalePlayer = glm::vec3(0.2f, 0.8f, 1.0f);
+    glm::vec3 scalePlayer = glm::vec3(0.2f, 0.5f, 1.0f);
     glm::vec3 positionPlayer = glm::vec3(-1.0f, detectPlayerColOfEndScreen(movePlayer), 0.0f);
     glm::vec3 rotatePlayer = glm::vec3(0.0f, 0.0f, 1.0f);
+    
+    glm::vec3 viewVec = glm::vec3(0.0f, 0.0f, -2.0f);
+    float fov = 0.0f;
 
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
@@ -194,9 +199,15 @@ int main () {
         movePlayer = proccessKeyOfMove(window);
 
         // matrix of view and projection
-        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
+        // glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
+        moveCamera(window, viewVec);
+        changeFOV(window, fov);
+        glm::mat4 view = glm::translate(glm::mat4(1.0f), viewVec);
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        
+
+        std::cout << "Camera xPos: " << viewVec.x << " yPos: " << viewVec.y << " zPos: " << viewVec.z << std::endl;
+        std::cout << "fov: " << fov << std::endl;
+
         // model of player
         positionPlayer.y = detectPlayerColOfEndScreen(movePlayer);
         glm::mat4 scaleMatrixPlayer = glm::scale(glm::mat4(1.0f), scalePlayer);
@@ -213,7 +224,6 @@ int main () {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureball);
 
-        // moving ball
         int xPlayer = (positionPlayer.x + 1) * positionPlayer.x * SCR_WIDTH;
         int yPlayer = (positionPlayer.y + 1) * positionPlayer.y * SCR_HEIGHT;
         std::cout << "xPos player: " << xPlayer << " yPos player: " << yPlayer << std::endl;
@@ -222,6 +232,7 @@ int main () {
         int yBall = (positionBall.y + 1) * positionBall.y * SCR_HEIGHT;
         std::cout << "xPos ball: " << xBall << " yPos ball: " << xBall << std::endl;
 
+        // moving ball
         detectCollisionPlayerAndBall(positionPlayer, positionBall, Velocity);
         detectCollisionEndScreenBall(positionBall, Velocity);
         moveBall(Velocity, positionBall, direction, angleBall);
@@ -260,12 +271,12 @@ void moveBall(glm::vec3 &Velocity, glm::vec3 &positionBall, int &direction, floa
             std::cout << "Direction: " << direction << std::endl;
 
             positionBall.x = moveBallX(positionBall.x, Velocity.x, direction);
-            positionBall.y = moveBallX(positionBall.y, Velocity.y, direction);
+            positionBall.y = moveBallY(positionBall.y, Velocity.y, direction);
             firstMoveBall = false;
         }
         else {
             positionBall.x = moveBallX(positionBall.x, Velocity.x, direction);
-            positionBall.y = moveBallX(positionBall.y, Velocity.y, direction);
+            positionBall.y = moveBallY(positionBall.y, Velocity.y, direction);
         }
     }
     else {
@@ -287,8 +298,9 @@ void resetGame() {
 }
 
 void detectCollisionPlayerAndBall(glm::vec3 &positionPlayer, glm::vec3 &positionBall, glm::vec3 &Velocity) {
-    if (positionPlayer.y == positionBall.y + 10.0f && positionPlayer.x + 10.0f == positionBall.x + 10.0f ) {
+    if (positionPlayer.y >= positionBall.y * 10.0f && positionPlayer.x * 10.0f >= positionBall.x * 10.0f) {
         Velocity.y *= -1;
+        Velocity.x *= -1;
     }
 }
 
@@ -343,6 +355,39 @@ float detectPlayerColOfEndScreen(float pos) {
         currPos = -0.65f;
     }
     return currPos;
+}
+
+void changeFOV(GLFWwindow* window, float &fov) {
+    float velocity = 0.5f;
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        fov += velocity;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        fov -= velocity;
+    }
+}
+
+void moveCamera(GLFWwindow* window, glm::vec3 &posCamera) {
+    float velocity = 0.01f;
+
+    if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS) {
+        posCamera.y += velocity;
+    }
+    else if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
+        posCamera.y -= velocity;
+    }
+    else if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
+        posCamera.x += velocity;
+    }
+    else if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) {
+        posCamera.x -= velocity;
+    }
+    else if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+        posCamera.z += velocity;
+    }
+    else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+        posCamera.z -= velocity;
+    }
 }
 
 float proccessKeyOfMove(GLFWwindow* window) {
