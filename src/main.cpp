@@ -11,8 +11,8 @@ float proccessKeyOfMove(GLFWwindow* window);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 float detectPlayerColOfEndScreen(float pos);
-float moveBallX(float posX, float velocity, int direction);
-float moveBallY(float posY, float velocity, int direction);
+float moveBallX(float posX, float velocity, int direction, float angle);
+float moveBallY(float posY, float velocity, int direction, float angle);
 float randomFloat(float min, float max);
 int randomNegativeInt(int min, int max);
 void startGame();
@@ -22,6 +22,7 @@ void detectCollisionEndScreenBall(glm::vec3 &positionBall, glm::vec3 &Velocity);
 void detectCollisionPlayerAndBall(glm::vec3 &positionPlayer, glm::vec3 &positionBall, glm::vec3 &Velocity);
 void moveCamera(GLFWwindow* window, glm::vec3 &posCamera);
 void changeFOV(GLFWwindow* window, float &fov);
+void PrintVXYAD(float x, float y, float angle, int direction);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -261,22 +262,20 @@ int main () {
 void moveBall(glm::vec3 &Velocity, glm::vec3 &positionBall, int &direction, float &angleBall) {
     if (isStartedGame) {
         if (firstMoveBall) {
-            Velocity = glm::vec3(0.012f, randomFloat(-0.01f, 0.01f), 0.0f);
+            Velocity = glm::vec3(0.012f, 0.01f, 0.0f);
             direction = randomNegativeInt(-1.0f, 1.0f);
 
-            std::cout << "Velocity.x: " << Velocity.x << std::endl;
-            std::cout << "Velocity.y: " << Velocity.y << std::endl;
+            PrintVXYAD(Velocity.x, Velocity.y, angleBall, direction);
 
-            std::cout << "AngleBall: " << glm::radians(angleBall) << std::endl;
-            std::cout << "Direction: " << direction << std::endl;
-
-            positionBall.x = moveBallX(positionBall.x, Velocity.x, direction);
-            positionBall.y = moveBallY(positionBall.y, Velocity.y, direction);
+            positionBall.x = moveBallX(positionBall.x, Velocity.x, direction, angleBall);
+            positionBall.y = moveBallY(positionBall.y, Velocity.y, direction, angleBall);
             firstMoveBall = false;
         }
         else {
-            positionBall.x = moveBallX(positionBall.x, Velocity.x, direction);
-            positionBall.y = moveBallY(positionBall.y, Velocity.y, direction);
+                PrintVXYAD(Velocity.x, Velocity.y, angleBall, direction);
+
+                positionBall.x = moveBallX(positionBall.x, Velocity.x, direction, angleBall);
+                positionBall.y = moveBallY(positionBall.y, Velocity.y, direction, angleBall);
         }
     }
     else {
@@ -315,7 +314,7 @@ void detectCollisionEndScreenBall(glm::vec3 &positionBall, glm::vec3 &Velocity) 
     }
 }
 
-float moveBallX(float posX, float velocity, int direction) {
+float moveBallX(float posX, float velocity, int direction, float angle) {
     if (direction == 1) {
         posX += velocity;
     }
@@ -325,7 +324,7 @@ float moveBallX(float posX, float velocity, int direction) {
     return posX;
 }
 
-float moveBallY(float posY, float velocity, int direction) {
+float moveBallY(float posY, float velocity, int direction, float angle) {
     if (direction == 1) {
         posY += velocity;
     }
@@ -333,17 +332,6 @@ float moveBallY(float posY, float velocity, int direction) {
         posY -= velocity;
     }
     return posY;
-}
-
-float detectCollisionBallY(float posY) {
-    float currPos = posY;
-    if (posY >= 0.675f) {
-        currPos = 0.675f;
-    }
-    else if (posY <= -0.65f) {
-        currPos = -0.65f;
-    }
-    return currPos;
 }
 
 float detectPlayerColOfEndScreen(float pos) {
@@ -434,4 +422,12 @@ int randomNegativeInt(int min, int max) {
         random = min + (rand() % (max - min + 1));
     }
     return random;
+}
+
+void PrintVXYAD(float x, float y, float angle, int direction) {
+    std::cout << "Velocity.x: " << x << std::endl;
+    std::cout << "Velocity.y: " << y << std::endl;
+
+    std::cout << "AngleBall: " << glm::radians(angle) << std::endl;
+    std::cout << "Direction: " << direction << std::endl;
 }
