@@ -22,17 +22,16 @@ enum class TypeBuffers {
 class Render {  
 // Инвариат == ?
 public:
-    Render() = default;
+    Render() = delete;
 
     explicit Render (const char* nw) : name_window_(nw) {}
 
-    Render(const char* nw, unsigned int scr_w, unsigned int scr_h) : name_window_(nw), scr_width_(scr_w), scr_height_(scr_h) {
-        
-        
-    }
+    Render(const char* nw, unsigned int scr_w, unsigned int scr_h) : name_window_(nw), scr_width_(scr_w), scr_height_(scr_h) {}
+    
+    Render(const Render&) = delete;
 
     ~Render() {
-        //delete shader_;
+        delete shader_;
     }
 
     inline GLFWwindow* GetWindow() const { return window_; }
@@ -52,17 +51,20 @@ public:
 public:
     void InitWindow();
     void InitRender();
-    void Draw(const glm::vec2& position);
+    void Draw(const glm::vec2& position, const glm::vec2& size, float rotate);
+    void SetOrthoProjection(float left, float right, float bottom, float top, float zNear, float zFar);
 
 private:
     GLFWwindow* CreateWindow(const char* nw, unsigned int scr_w, unsigned int scr_h);
 
     void GenerateBuffers(const GLsizei n, TypeBuffers type);
+    void BufferData(GLenum target, GLsizeiptr sizeptr, const void* data, GLenum usage);
 
     void BindVertexArray(GLuint array);
     void BindBuffer(GLenum target, GLuint buffer);
 
-    void BufferData(GLenum target, GLsizeiptr sizeptr, const void* data, GLenum usage);
+    void SetVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, void* offset);
+    void EnableVertexAttribArray(GLuint index);
 
 private:
     Shader* shader_;

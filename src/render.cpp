@@ -19,10 +19,10 @@ void Render::InitWindow() {
 void Render::InitRender() {
     float vertices_player[] = {
         // positions         // colors
-        50.f,  50.f, 0.0f,  1.0f, 1.0f, 1.0f,  // top right
-        50.f,  -50.f, 0.0f,  1.0f, 1.0f, 1.0f,  // bottom right
-        -50.f,  50.f, 0.0f,  .0f, 1.0f, .0f,  // bottom left
-        -50.f, -50.f, 0.0f,  .0f, 1.0f, .0f   // top left 
+        5.f,  5.f, 0.0f,  1.0f, 1.0f, 1.0f,  // top right
+        5.f,  -5.f, 0.0f,  1.0f, 1.0f, 1.0f,  // bottom right
+        -5.f,  5.f, 0.0f,  .0f, 1.0f, .0f,  // bottom left
+        -5.f, -5.f, 0.0f,  .0f, 1.0f, .0f   // top left 
     };
 
     unsigned int indices_player[] = {
@@ -40,6 +40,14 @@ void Render::InitRender() {
 
     BindBuffer(GL_ELEMENT_ARRAY_BUFFER, GetEBO(0));
     BufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices_player), indices_player, GL_DYNAMIC_DRAW);
+
+    // Attribute of position player
+    SetVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    EnableVertexAttribArray(0);
+    // Attribute of color player
+    SetVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    EnableVertexAttribArray(1);
+
 }
 
 GLFWwindow* Render::CreateWindow(const char* nw, unsigned int scr_w, unsigned int scr_h) {
@@ -101,15 +109,34 @@ void Render::BufferData(GLenum target, GLsizeiptr sizeptr, const void* data, GLe
     glBufferData(target, sizeptr, data, usage);
 }
 
-void Render::Draw(const glm::vec2& position) {
+void Render::SetVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, void* offset) {
+    glVertexAttribPointer(index, size, type, normalized, stride, (void*)offset);
+}
+
+void Render::EnableVertexAttribArray(GLuint index) {
+    glEnableVertexAttribArray(index);
+}
+
+void Render::SetOrthoProjection(float left, float right, float bottom, float top, float zNear, float zFar) {
+    glm::mat4 projectionMatrix = glm::ortho(left, static_cast<float>(scr_width_), bottom, static_cast<float>(scr_height_), zNear, zFar);
+
     shader_->use();
+    shader_->setMat4("projectionMat", projectionMatrix);
     BindVertexArray(GetVAO(0));
+}
+
+void Render::Draw(const glm::vec2& position, const glm::vec2& size, float rotate) {
+    shader_->use();
+    
     glm::mat4 model_matrix = glm::mat4(1.f);
     model_matrix = glm::translate(model_matrix, glm::vec3(position, 0.f));
+    model_matrix = glm::rotate(model_matrix, glm::radians(rotate), glm::vec3(position, 0.f));
+    model_matrix = glm::scale(model_matrix, glm::vec3(0.5f * size.x, 0.5f * size.y, 0.f));
 
     shader_->setMat4("modelMat", model_matrix);
 
-    
+
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    BindVertexArray(GetVAO(0));
     
 }
