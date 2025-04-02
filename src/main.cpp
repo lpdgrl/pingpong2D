@@ -5,7 +5,7 @@
 #include <cmath> 
 #include "shader.hpp"
 #include "image_loader.hpp"
-
+#include "game.hpp"
 
 float proccessKeyOfMove(GLFWwindow* window);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -27,6 +27,7 @@ void PrintVXYAD(float x, float y, float angle, int direction);
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+const char* name_window = "Ping Pong 2D";
 const char* PATH_TO_FILE_VERTEX_SHADER = "/home/lpdgrl/Project/code/pingpong2D/src/shaders/shader.vs";
 const char* PATH_TO_FILE_FRAGMENT_SHADER = "/home/lpdgrl/Project/code/pingpong2D/src/shaders/shader.fs";
 const char* textureEARTHBALL = "/home/lpdgrl/Project/code/pingpong2D/data/textures/fireball.png";
@@ -49,27 +50,10 @@ bool firstMoveBall = true;
 glm::vec3 Velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 
 int main () {
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "PingPong 2D", NULL, NULL);
-    if (window == NULL) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
 
-    glfwMakeContextCurrent(window);
-    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-    // glad: load all OpenGL function pointers
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }  
+    Game game(name_window, SCR_WIDTH, SCR_HEIGHT);
+    game.InitGame();
+    GLFWwindow* window = game.GetPointerWindow();
 
     glEnable(GL_DEPTH_TEST);
     
@@ -77,15 +61,15 @@ int main () {
 
     float verticesPlayer[] = {
         // positions         // colors
-        0.1f,  0.2f, 0.0f,  1.0f, 1.0f, 1.0f,  // top right
-        0.1f, -0.2f, 0.0f,  1.0f, 1.0f, 1.0f,  // bottom right
-       -0.1f, -0.2f, 0.0f,  1.0f, 1.0f, 1.0f,  // bottom left
-       -0.1f,  0.2f, 0.0f,  1.0f, 1.0f, 1.0f   // top left 
+        50.f,  50.f, 0.0f,  1.0f, 1.0f, 1.0f,  // top right
+        50.f,  -50.f, 0.0f,  1.0f, 1.0f, 1.0f,  // bottom right
+        -50.f,  50.f, 0.0f,  .0f, 1.0f, .0f,  // bottom left
+        -50.f, -50.f, 0.0f,  .0f, 1.0f, .0f   // top left 
     };
 
     unsigned int indicesPlayer[] = {
         0, 1, 3,
-        1, 2, 3
+        0, 3, 2
     };
 
     unsigned int VBO, VAO, EBO;
@@ -166,7 +150,7 @@ int main () {
         std::cout << "Failed to load texture" << std::endl;
     }
     stbi_image_free(data);
-    shader_ball.use();
+   /* shader_ball.use();
     shader_ball.setInt("textureball", 0);
     
     float angleBall = randomFloat(0.0f, 360.0f);
@@ -184,19 +168,49 @@ int main () {
     glm::vec3 viewVec = glm::vec3(0.0f, 0.0f, -2.0f);
     float fov = 0.0f;
 
-    glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-
     int direction = 0;
+    */
 
+    glm::mat4 modelMatrix = glm::mat4(1.f);
+    modelMatrix = glm::translate(modelMatrix, glm::vec3(400.f, 300.f, 0.f));
+
+    glm::mat4 modelMatrix_ = glm::translate(glm::mat4(1.f), glm::vec3(100.f, 100.f, 0.f));
+
+    glm::mat4 projectionMatrix = glm::ortho(0.f, static_cast<float>(SCR_WIDTH), 0.f, static_cast<float>(SCR_HEIGHT), -100.f, 100.f);
+    
+    shader.use();
+    shader.setMat4("projectionMat", projectionMatrix);
+    
     // render loop
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
-        
+
+
+        glm::vec3 v(0.0f, 0.0f, 0.0f);
+
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.use();
         glBindVertexArray(VAO);
+        
+
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+            v.y += 10.f;
+        }
+        else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            v.y -= 10.f;
+        }
+
+        modelMatrix = glm::translate(modelMatrix, v);
+        shader.setMat4("modelMat", modelMatrix);
+        
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        modelMatrix_ = glm::translate(modelMatrix_, v);
+        shader.setMat4("modelMat", modelMatrix_);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        /*
         movePlayer = proccessKeyOfMove(window);
 
         // matrix of view and projection
@@ -250,7 +264,7 @@ int main () {
 
         glBindVertexArray(VAO_ball);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
+        */
         glfwSwapBuffers(window);
         glfwPollEvents();
 
@@ -389,11 +403,7 @@ float proccessKeyOfMove(GLFWwindow* window) {
     return movePlayer;
 }
 
-// callback function for resizing window size
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
+
 
 void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
