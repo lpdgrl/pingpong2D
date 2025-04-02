@@ -1,9 +1,6 @@
 #include <glad.h>
 #include <glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <cmath> 
-#include "shader.hpp"
 #include "image_loader.hpp"
 #include "game.hpp"
 
@@ -31,8 +28,7 @@ const char* name_window = "Ping Pong 2D";
 const char* PATH_TO_FILE_VERTEX_SHADER = "/home/lpdgrl/Project/code/pingpong2D/src/shaders/shader.vs";
 const char* PATH_TO_FILE_FRAGMENT_SHADER = "/home/lpdgrl/Project/code/pingpong2D/src/shaders/shader.fs";
 const char* textureEARTHBALL = "/home/lpdgrl/Project/code/pingpong2D/data/textures/fireball.png";
-const char* PATH_TO_FILE_VERTEX_SHADER_BALL = "/home/lpdgrl/Project/code/pingpong2D/src/shaders/shader_ball.vs";
-const char* PATH_TO_FILE_FRAGMENT_SHADER_BALL = "/home/lpdgrl/Project/code/pingpong2D/src/shaders/shader_ball.fs";
+
 
 // set settings of game
 float movePlayer = 0.1f;
@@ -49,41 +45,25 @@ bool firstMoveBall = true;
 
 glm::vec3 Velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 
+
+
 int main () {
-
-    Game game(name_window, SCR_WIDTH, SCR_HEIGHT);
-    game.InitGame();
-    GLFWwindow* window = game.GetPointerWindow();
-
-    glEnable(GL_DEPTH_TEST);
     
-    Shader shader(PATH_TO_FILE_VERTEX_SHADER, PATH_TO_FILE_FRAGMENT_SHADER);
+    using namespace std::literals;
+    
+    Game game(name_window, SCR_WIDTH, SCR_HEIGHT);
+    std::cout << "d" << std::endl;
+    game.InitGame();
+    
+    GLFWwindow* window = game.GetPointerWindow();
+    
+    
+    
+    // Shader* shader = new Shader(PATH_TO_FILE_VERTEX_SHADER, PATH_TO_FILE_FRAGMENT_SHADER);
 
-    float verticesPlayer[] = {
-        // positions         // colors
-        50.f,  50.f, 0.0f,  1.0f, 1.0f, 1.0f,  // top right
-        50.f,  -50.f, 0.0f,  1.0f, 1.0f, 1.0f,  // bottom right
-        -50.f,  50.f, 0.0f,  .0f, 1.0f, .0f,  // bottom left
-        -50.f, -50.f, 0.0f,  .0f, 1.0f, .0f   // top left 
-    };
+    Render* render = game.GetRenderPointer();
 
-    unsigned int indicesPlayer[] = {
-        0, 1, 3,
-        0, 3, 2
-    };
-
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(verticesPlayer), verticesPlayer, GL_DYNAMIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indicesPlayer), indicesPlayer, GL_DYNAMIC_DRAW);
+    Shader* shader = render->GetShaderPointer();
 
     // position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
@@ -93,7 +73,7 @@ int main () {
     glEnableVertexAttribArray(1);
     
 
-    Shader shader_ball(PATH_TO_FILE_VERTEX_SHADER_BALL, PATH_TO_FILE_FRAGMENT_SHADER_BALL);
+    // Shader shader_ball(PATH_TO_FILE_VERTEX_SHADER_BALL, PATH_TO_FILE_FRAGMENT_SHADER_BALL);
 
     float verticesBall[] = {
         // positions
@@ -110,9 +90,11 @@ int main () {
 
     unsigned int VBO_ball, VAO_ball, EBO_ball;
     glGenVertexArrays(1, &VAO_ball);
+    
     glGenBuffers(1, &VBO_ball);
     glGenBuffers(1, &EBO_ball);
 
+    
     glBindVertexArray(VAO_ball);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO_ball);
@@ -172,27 +154,27 @@ int main () {
     */
 
     glm::mat4 modelMatrix = glm::mat4(1.f);
+    
     modelMatrix = glm::translate(modelMatrix, glm::vec3(400.f, 300.f, 0.f));
-
     glm::mat4 modelMatrix_ = glm::translate(glm::mat4(1.f), glm::vec3(100.f, 100.f, 0.f));
 
     glm::mat4 projectionMatrix = glm::ortho(0.f, static_cast<float>(SCR_WIDTH), 0.f, static_cast<float>(SCR_HEIGHT), -100.f, 100.f);
     
-    shader.use();
-    shader.setMat4("projectionMat", projectionMatrix);
+    shader->use();
+    shader->setMat4("projectionMat", projectionMatrix);
     
     // render loop
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
 
 
-        glm::vec3 v(0.0f, 0.0f, 0.0f);
+        glm::vec3 v(100.0f, 100.0f, 0.0f);
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shader.use();
-        glBindVertexArray(VAO);
+        //shader->use();
+        // glBindVertexArray(render->GetVAO(0));
         
 
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -202,14 +184,17 @@ int main () {
             v.y -= 10.f;
         }
 
-        modelMatrix = glm::translate(modelMatrix, v);
-        shader.setMat4("modelMat", modelMatrix);
-        
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        game.Update(v);
 
-        modelMatrix_ = glm::translate(modelMatrix_, v);
-        shader.setMat4("modelMat", modelMatrix_);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        //modelMatrix = glm::translate(modelMatrix, v);
+        //shader->setMat4("modelMat", modelMatrix);
+        
+        //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        //modelMatrix_ = glm::translate(modelMatrix_, v);
+        //shader->setMat4("modelMat", modelMatrix_);
+        //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); 
+
         /*
         movePlayer = proccessKeyOfMove(window);
 

@@ -25,10 +25,13 @@ public:
 
     inline GLFWwindow* GetPointerWindow() const { return render_->GetWindow(); }
 
+    inline Render* GetRenderPointer() const { return render_; }
+
 public:
-    void Update();
+    void Update(const glm::vec2& position);
     void InitGame();
     void StartGame();
+    void Render_(const glm::vec2& position);
 
 private:
     Render* render_;

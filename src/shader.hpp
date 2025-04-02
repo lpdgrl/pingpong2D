@@ -1,3 +1,5 @@
+#pragma once
+
 #include <glad.h>
 #include <string>
 #include <glm/gtc/type_ptr.hpp>
