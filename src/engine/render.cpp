@@ -19,10 +19,10 @@ void Render::InitWindow() {
 void Render::InitRender() {
     float vertices_player[] = {
         // positions         // colors
-        5.f,  5.f, 0.0f,  1.0f, 1.0f, 1.0f,  // top right
-        5.f,  -5.f, 0.0f,  1.0f, 1.0f, 1.0f,  // bottom right
-        -5.f,  5.f, 0.0f,  .0f, 1.0f, .0f,  // bottom left
-        -5.f, -5.f, 0.0f,  .0f, 1.0f, .0f   // top left 
+        1.f,  1.f, 0.0f,  1.0f, 1.0f, 1.0f,  // top right
+        1.f,  -1.f, 0.0f,  1.0f, 1.0f, 1.0f,  // bottom right
+        -1.f,  1.f, 0.0f,  .0f, 1.0f, .0f,  // bottom left
+        -1.f, -1.f, 0.0f,  .0f, 1.0f, .0f   // top left 
     };
 
     unsigned int indices_player[] = {
@@ -125,18 +125,56 @@ void Render::SetOrthoProjection(float left, float right, float bottom, float top
     BindVertexArray(GetVAO(0));
 }
 
-void Render::Draw(const glm::vec2& position, const glm::vec2& size, float rotate) {
+void Render::Draw(const glm::vec2& position, const glm::vec2& size, AxisRotate axis, GLfloat rotate) {
     shader_->use();
     
+    // Переписать в отдельные методы - тогда могу скалировать, вращать, перемещать независимо любой объект
     glm::mat4 model_matrix = glm::mat4(1.f);
-    model_matrix = glm::translate(model_matrix, glm::vec3(position, 0.f));
-    model_matrix = glm::rotate(model_matrix, glm::radians(rotate), glm::vec3(position, 0.f));
-    model_matrix = glm::scale(model_matrix, glm::vec3(0.5f * size.x, 0.5f * size.y, 0.f));
+
+    // Выполняем трансформации матрицы
+    model_matrix = TranslateMatrix(model_matrix, position);
+    model_matrix = RotateMatrix(model_matrix, axis, rotate);
+    model_matrix = ScaleMatrix(model_matrix, size);
+
+    //model_matrix = glm::translate(model_matrix, glm::vec3(position, 0.f));
+    //model_matrix = glm::rotate(model_matrix, glm::radians(rotate), glm::vec3(0.f, 0.f, 0.f));
+   //model_matrix = glm::scale(model_matrix, glm::vec3(size.x, size.y, 0.f));
 
     shader_->setMat4("modelMat", model_matrix);
-
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     BindVertexArray(GetVAO(0));
     
+}
+
+glm::mat4 Render::RotateMatrix(glm::mat4& model, AxisRotate axis, GLfloat rotate) {
+    glm::vec3 r_vec;
+
+    switch(axis) {
+        case AxisRotate::AXIS_X: {
+            r_vec = {1.f, 0.f, 0.f};
+            break;
+        }
+        case AxisRotate::AXIS_Y: {
+            r_vec = {0.f, 1.f, 0.f};
+            break;
+        }
+        case AxisRotate::AXIS_Z: {
+            r_vec = {0.f, 0.f, 1.f};
+            break;
+        }
+        case AxisRotate::NONE: {
+            r_vec = {0.f, 0.f, 0.5f};
+            break;
+        }
+    }
+    return glm::rotate(model, glm::radians(rotate), r_vec);
+}
+
+glm::mat4 Render::TranslateMatrix(glm::mat4& model, const glm::vec2& position) {
+    return glm::translate(model, glm::vec3(position, 0.f));
+}
+
+glm::mat4 Render::ScaleMatrix(glm::mat4& model, const glm::vec2& size) {
+    return glm::scale(model, glm::vec3(size.x, size.y, 0.f));
 }

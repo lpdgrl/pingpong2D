@@ -10,13 +10,18 @@
 
 #include "shader.hpp"
 
-
 enum class TypeBuffers {
     EBO = 0,
     VBO = 1,
     VAO = 2
 };
 
+enum class AxisRotate {
+    NONE   = -1,
+    AXIS_X =  0,
+    AXIS_Y =  1,
+    AXIS_Z =  2,
+};
 
 // Класс Render - занимается отрисовкой сцены, расчетом матриц трансформаций и векторов
 class Render {  
@@ -46,12 +51,15 @@ public:
 
     inline Shader* GetShaderPointer() const { return shader_; }
 
+    inline unsigned int GetWindowWidth() const { return scr_width_; }
+    inline unsigned int GetWindowHeight() const { return scr_height_; }
+
     static void FrameBufferSizeCallback(GLFWwindow* window, int width, int height);
 
 public:
     void InitWindow();
     void InitRender();
-    void Draw(const glm::vec2& position, const glm::vec2& size, float rotate);
+    void Draw(const glm::vec2& position, const glm::vec2& size, AxisRotate axis, GLfloat rotate);
     void SetOrthoProjection(float left, float right, float bottom, float top, float zNear, float zFar);
 
 private:
@@ -65,6 +73,10 @@ private:
 
     void SetVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, void* offset);
     void EnableVertexAttribArray(GLuint index);
+
+    glm::mat4 RotateMatrix(glm::mat4& model, AxisRotate axis, GLfloat rotate);
+    glm::mat4 TranslateMatrix(glm::mat4& model, const glm::vec2& position);
+    glm::mat4 ScaleMatrix(glm::mat4& model, const glm::vec2& size);
 
 private:
     Shader* shader_;
