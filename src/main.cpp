@@ -19,7 +19,7 @@ int main () {
 
     game.InitGame();
     GLFWwindow* window = game.GetPointerWindow();
-    
+
     game.StartGame();
 
     GLfloat delta_time = 0.f;
@@ -51,5 +51,3 @@ void processInput(GLFWwindow* window) {
         std::cout << "Window been closed!" << std::endl;
     }
 }
-
-

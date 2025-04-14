@@ -23,9 +23,12 @@ public:
     ~Ball() noexcept {}
 
     inline bool GetWasColliding() const { return was_colliding_; }
+    inline bool GetWasCollPlayerTwo() const { return was_colliding_pl_two; }
 
     inline void SetWasColliding(bool was_colliding) { was_colliding_ = was_colliding; }
+    inline void SetCollPlayerTwo(bool was_colliding) { was_colliding_pl_two = was_colliding; }
 
 private:
     bool was_colliding_;
+    bool was_colliding_pl_two = false;
 };

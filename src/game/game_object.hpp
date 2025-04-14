@@ -56,7 +56,7 @@ public:
     GameObject(GameObject&& object) = delete;
     GameObject& operator=(GameObject&& object) = delete;
 
-    ~GameObject() noexcept {}
+    ~GameObject() noexcept { }
 
     virtual SizeObject GetSize() const { return size_; }
     virtual PositionObject GetPos() const { return position_; }
@@ -78,6 +78,7 @@ public:
 
     virtual void SetDirectionX(int direction) { if (direction > 1 || direction < -1) { direction_x_ = 0; } direction_x_ = direction; }
     virtual void SetDirectionY(int direction) { if (direction > 1 || direction < -1) { direction_y_ = 0; } direction_y_ = direction; }
+
 
 protected:
     SizeObject size_;

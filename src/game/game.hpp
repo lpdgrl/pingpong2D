@@ -6,12 +6,14 @@
 #include "player.hpp"
 
 enum class KeyPress {
-    W = 0,
-    S = 1,
-    R = 2,
-    ENTER = 3,
-    SPACE = 4,
-    None = 5
+    W = 87,
+    S = 83,
+    R = 82,
+    I = 73,
+    K = 75,
+    ENTER = 257,
+    SPACE = 259,
+    NONE = -1,
 };
 
 enum class DirectionBall {
@@ -26,7 +28,7 @@ enum class DirectionPlayer {
     UP = 1,
 };
 
-static const SizeObject PLAYER_SIZE{20.f, 100.f};
+static const SizeObject PLAYER_SIZE{20.f, 50.f};
 static const PositionObject PLAYER_POSITION{400.f, 300.f};
 
 static const SizeObject BALL_SIZE{10.f, 10.f};
@@ -44,8 +46,12 @@ public:
         // Инвариат == ?
         if (scr_width >= 640 && scr_height >= 480) {
             render_ = new Render(name_window, scr_width, scr_height);
-            player_ = new Player(PLAYER_SIZE, {0.f, scr_height / 2 - PLAYER_SIZE.y / 2}, {0.f, 500.f}, static_cast<int>(DirectionPlayer::NOWHERE),
+
+            player_one_ = new Player(PLAYER_SIZE, {0.f, scr_height / 2.f}, {0.f, 500.f}, static_cast<int>(DirectionPlayer::NOWHERE),
                                 static_cast<int>(DirectionPlayer::NOWHERE));
+            player_two_ = new Player(PLAYER_SIZE, {scr_width * 1.f, scr_height / 2.f}, {0.f, 500.f}, static_cast<int>(DirectionPlayer::NOWHERE),
+                                static_cast<int>(DirectionPlayer::NOWHERE));
+
             ball_ = new Ball(BALL_SIZE, {scr_width / 2 - BALL_SIZE.x, scr_height / 2 - BALL_SIZE.y}, {100.f, 80.f}, static_cast<int>(DirectionBall::LEFT),
                             static_cast<int>(DirectionBall::NOWHERE), false);
         }
@@ -59,7 +65,8 @@ public:
 
     ~Game() {
         delete render_;
-        delete player_;
+        delete player_one_;
+        delete player_two_;
         delete ball_;
     };
 
@@ -74,7 +81,7 @@ public:
     void StartGame();
     void ResetGame();
     void Draw(const glm::vec2& position, const glm::vec2& size, AxisRotate axis, GLfloat rotate);
-    bool CheckColision(GameObject* one, GameObject* two);
+    bool CheckColision(GameObject* one, GameObject* two, bool second);
     void GameLog(GLfloat parametr) const;
 
 private:
@@ -84,7 +91,8 @@ private:
 
 private:
     Render* render_ = nullptr;
-    Player* player_ = nullptr;
+    Player* player_one_ = nullptr;
+    Player* player_two_ = nullptr;
     Ball* ball_ = nullptr;
     bool start_game_ = false;
 };
