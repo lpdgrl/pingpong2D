@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "../engine/render.hpp"
+
 struct SizeObject {
     SizeObject() {
         x = 0;
@@ -43,7 +45,8 @@ public:
         direction_y_ = 0;
     };
 
-    GameObject(SizeObject sz, PositionObject pos, glm::vec2 velocity, int direction_x, int direction_y) : 
+    GameObject(Render* render, SizeObject sz, PositionObject pos, glm::vec2 velocity, int direction_x, int direction_y) : 
+    render_(render),
     size_(sz), 
     position_(pos), 
     velocity_(velocity), 
@@ -79,8 +82,11 @@ public:
     virtual void SetDirectionX(int direction) { if (direction > 1 || direction < -1) { direction_x_ = 0; } direction_x_ = direction; }
     virtual void SetDirectionY(int direction) { if (direction > 1 || direction < -1) { direction_y_ = 0; } direction_y_ = direction; }
 
+    virtual void DrawObject() { render_->Draw(this->GetCoordVec(), this->GetSizeVec(), AxisRotate::NONE, 0.f); }
+    virtual void DrawObject(AxisRotate axis, GLfloat rotate_val) { render_->Draw(this->GetCoordVec(), this->GetSizeVec(), axis, rotate_val); }
 
 protected:
+    Render* render_;
     SizeObject size_;
     PositionObject position_;
     glm::vec2 velocity_;

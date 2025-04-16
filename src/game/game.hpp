@@ -48,12 +48,12 @@ public:
             render_ = new Render(name_window, scr_width, scr_height);
 
             player_one_ = new Player(PLAYER_SIZE, {0.f, scr_height / 2.f}, {0.f, 500.f}, static_cast<int>(DirectionPlayer::NOWHERE),
-                                static_cast<int>(DirectionPlayer::NOWHERE));
+                                static_cast<int>(DirectionPlayer::NOWHERE), render_);
             player_two_ = new Player(PLAYER_SIZE, {scr_width * 1.f, scr_height / 2.f}, {0.f, 500.f}, static_cast<int>(DirectionPlayer::NOWHERE),
-                                static_cast<int>(DirectionPlayer::NOWHERE));
+                                static_cast<int>(DirectionPlayer::NOWHERE), render_);
 
             ball_ = new Ball(BALL_SIZE, {scr_width / 2 - BALL_SIZE.x, scr_height / 2 - BALL_SIZE.y}, {100.f, 80.f}, static_cast<int>(DirectionBall::LEFT),
-                            static_cast<int>(DirectionBall::NOWHERE), false);
+                            static_cast<int>(DirectionBall::NOWHERE), false, false, render_);
         }
     }
 
@@ -80,14 +80,14 @@ public:
     void InitGame();
     void StartGame();
     void ResetGame();
-    void Draw(const glm::vec2& position, const glm::vec2& size, AxisRotate axis, GLfloat rotate);
-    bool CheckColision(GameObject* one, GameObject* two, bool second);
     void GameLog(GLfloat parametr) const;
 
 private:
     KeyPress ProcessInput(GLFWwindow* window);
     glm::vec2 GetPositionObj(GameObject* obj);
     glm::vec2 GetSizeObj(GameObject* obj);
+
+    bool CheckCollision(GameObject* one, GameObject* two, bool second_player);
 
 private:
     Render* render_ = nullptr;
