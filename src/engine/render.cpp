@@ -12,12 +12,18 @@ void Render::InitWindow() {
 
     glfwSetFramebufferSizeCallback(window_, FrameBufferSizeCallback);
 
+    glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     shader_ = new Shader(PATH_TO_FILE_VERTEX_SHADER, PATH_TO_FILE_FRAGMENT_SHADER);
+    shader_text_ = new Shader(PATH_TO_VERTEX_SHADER_TEXT, PATH_TO_FRAGMENT_SHADER_TEXT);
+    text_ = new TextRender(PATH_TO_FONT);
+    text_->Initialaztion();
 }
 
 void Render::InitRender() {
-    float vertices_player[] = {
+    float vertices_objects[] = {
         // positions         // colors
         1.f,  1.f, 0.0f,  1.0f, 1.0f, 1.0f,  // top right
         1.f,  -1.f, 0.0f,  1.0f, 1.0f, 1.0f,  // bottom right
@@ -25,29 +31,49 @@ void Render::InitRender() {
         -1.f, -1.f, 0.0f,  .0f, 1.0f, .0f   // top left 
     };
 
-    unsigned int indices_player[] = {
+    unsigned int indices_objects[] = {
         0, 1, 3,
         0, 3, 2
     };
+    
+    //Buffers for objects
+    GenerateBuffer(1, TypeBuffers::VAO, MapKey::OBJECTS);
+    GenerateBuffer(1, TypeBuffers::VBO, MapKey::OBJECTS);
+    GenerateBuffer(1, TypeBuffers::EBO, MapKey::OBJECTS);
 
-    GenerateBuffers(1, TypeBuffers::VAO);
-    GenerateBuffers(1, TypeBuffers::VBO);
-    GenerateBuffers(1, TypeBuffers::EBO);
+    BindVertexArray(GetVAO(MapKey::OBJECTS));
+    BindBuffer(GL_ARRAY_BUFFER, GetVBO(MapKey::OBJECTS));
+    BufferData(GL_ARRAY_BUFFER, sizeof(vertices_objects), vertices_objects, GL_DYNAMIC_DRAW);
 
-    BindVertexArray(GetVAO(0));
-    BindBuffer(GL_ARRAY_BUFFER, GetVBO(0));
-    BufferData(GL_ARRAY_BUFFER, sizeof(vertices_player), vertices_player, GL_DYNAMIC_DRAW);
-
-    BindBuffer(GL_ELEMENT_ARRAY_BUFFER, GetEBO(0));
-    BufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices_player), indices_player, GL_DYNAMIC_DRAW);
+    BindBuffer(GL_ELEMENT_ARRAY_BUFFER, GetEBO(MapKey::OBJECTS));
+    BufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices_objects), indices_objects, GL_DYNAMIC_DRAW);
 
     // Attribute of position player
-    SetVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     EnableVertexAttribArray(0);
-    // Attribute of color player
-    SetVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    EnableVertexAttribArray(1);
+    SetVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 
+    // Attribute of color player
+    EnableVertexAttribArray(1);
+    SetVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    BindBuffer(GL_ARRAY_BUFFER, 0);
+    BindVertexArray(0);
+}
+
+void Render::InitRenderText() {
+    GenerateBuffer(1, TypeBuffers::VAO, MapKey::TEXT);
+    GenerateBuffer(1, TypeBuffers::VBO, MapKey::TEXT);
+
+    BindVertexArray(GetVAO(MapKey::TEXT));
+    BindBuffer(GL_ARRAY_BUFFER, GetVBO(MapKey::TEXT));
+    
+    BufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+
+    EnableVertexAttribArray(0);
+    SetVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+
+    BindBuffer(GL_ARRAY_BUFFER, 0);
+    BindVertexArray(0); 
 }
 
 GLFWwindow* Render::CreateWindow(const char* nw, unsigned int scr_w, unsigned int scr_h) {
@@ -75,24 +101,24 @@ void Render::FrameBufferSizeCallback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-void Render::GenerateBuffers(const GLsizei n, TypeBuffers type) {
+void Render::GenerateBuffer(const GLsizei n, TypeBuffers type, MapKey key) {
     GLuint b;
     
     switch(type)
     {
         case TypeBuffers::VAO: 
             glGenVertexArrays(n, &b);
-            vao_.push_back(b);
+            vao_.insert(std::make_pair(key, b));
         break;
 
         case TypeBuffers::VBO:
             glGenBuffers(n, &b);
-            vbo_.push_back(b);
+            vbo_.insert(std::make_pair(key, b));
         break;
 
         case TypeBuffers::EBO:
             glGenBuffers(n, &b);
-            ebo_.push_back(b);
+            ebo_.insert(std::make_pair(key, b));
         break;
     }
 }
@@ -122,12 +148,17 @@ void Render::SetOrthoProjection(float left, float right, float bottom, float top
 
     shader_->use();
     shader_->setMat4("projectionMat", projectionMatrix);
-    BindVertexArray(GetVAO(0));
+    BindVertexArray(GetVAO(MapKey::OBJECTS));
+
+    shader_text_->use();
+    glUniformMatrix4fv(glGetUniformLocation(shader_text_->ID, "projection"), 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+    BindVertexArray(GetVAO(MapKey::TEXT));
 }
 
 void Render::Draw(const glm::vec2& position, const glm::vec2& size, AxisRotate axis, GLfloat rotate) {
-    shader_->use();
     
+    shader_->use();
+    BindVertexArray(GetVAO(MapKey::OBJECTS));
     // Переписать в отдельные методы - тогда могу скалировать, вращать, перемещать независимо любой объект
     glm::mat4 model_matrix = glm::mat4(1.f);
 
@@ -136,15 +167,55 @@ void Render::Draw(const glm::vec2& position, const glm::vec2& size, AxisRotate a
     model_matrix = RotateMatrix(model_matrix, axis, rotate);
     model_matrix = ScaleMatrix(model_matrix, size);
 
-    //model_matrix = glm::translate(model_matrix, glm::vec3(position, 0.f));
-    //model_matrix = glm::rotate(model_matrix, glm::radians(rotate), glm::vec3(0.f, 0.f, 0.f));
-   //model_matrix = glm::scale(model_matrix, glm::vec3(size.x, size.y, 0.f));
-
     shader_->setMat4("modelMat", model_matrix);
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    BindVertexArray(GetVAO(0));
+    BindVertexArray(GetVAO(MapKey::OBJECTS));
     
+}
+
+void Render::DrawText(std::string text, float x, float y, float scale, glm::vec3 color) {
+    shader_text_->use();
+
+    glUniform3f(glGetUniformLocation(shader_text_->ID, "textColor"), color.x, color.y, color.z);
+    glActiveTexture(GL_TEXTURE0);
+    BindVertexArray(GetVAO(MapKey::TEXT));
+
+    // iterate through all characters
+    std::string::const_iterator c;
+    for (c = text.begin(); c != text.end(); c++) 
+    {
+        Character ch = text_->GetCharacter(*c);
+
+        float xpos = x + ch.Bearing.x * scale;
+        float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+        float w = ch.Size.x * scale;
+        float h = ch.Size.y * scale;
+        // update VBO for each character
+        float vertices[6][4] = {
+            { xpos,     ypos + h,   0.0f, 0.0f },            
+            { xpos,     ypos,       0.0f, 1.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+
+            { xpos,     ypos + h,   0.0f, 0.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+            { xpos + w, ypos + h,   1.0f, 0.0f }           
+        };
+        // render glyph texture over quad
+        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+        // update content of VBO memory
+        BindBuffer(GL_ARRAY_BUFFER, GetVBO(MapKey::TEXT));
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); // be sure to use glBufferSubData and not glBufferData
+
+        BindBuffer(GL_ARRAY_BUFFER, 0);
+        // render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+        x += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    BindVertexArray(GetVAO(MapKey::TEXT));
 }
 
 glm::mat4 Render::RotateMatrix(glm::mat4& model, AxisRotate axis, GLfloat rotate) {

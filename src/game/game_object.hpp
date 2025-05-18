@@ -31,6 +31,20 @@ struct PositionObject {
         this->x = x;
         this->y = y;
     }
+
+    inline PositionObject operator+(const PositionObject &rhs) {
+        PositionObject other{*this};
+
+        other += rhs;
+        return other;
+    }
+
+    inline PositionObject operator+=(const PositionObject &rhs) {
+        x = x + rhs.x;
+        y = y + rhs.y;
+        
+        return *this;
+    }
     
     GLfloat x;
     GLfloat y;
@@ -84,6 +98,8 @@ public:
 
     virtual void DrawObject() { render_->Draw(this->GetCoordVec(), this->GetSizeVec(), AxisRotate::NONE, 0.f); }
     virtual void DrawObject(AxisRotate axis, GLfloat rotate_val) { render_->Draw(this->GetCoordVec(), this->GetSizeVec(), axis, rotate_val); }
+
+    virtual void Move(GLfloat dt) {};
 
 protected:
     Render* render_;

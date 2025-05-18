@@ -26,12 +26,22 @@ public:
     inline bool GetCollPlayerOne() const { return was_colliding_pl_one_; }
     inline bool GetCollPlayerTwo() const { return was_colliding_pl_two_; }
     inline GLfloat GetOffset() const { return offset_; }
+    inline GLfloat GetRotate() const { return rotate_; }
 
     inline void SetCollPlayerOne(bool was_colliding) { was_colliding_pl_one_ = was_colliding; }
     inline void SetCollPlayerTwo(bool was_colliding) { was_colliding_pl_two_ = was_colliding; }
     inline void SetOffset(GLfloat offset) { offset_ = offset; }
+    inline void SetRotate(GLfloat rotate) { rotate_ = rotate; }
+
+    inline void Move(GLfloat dt) override { 
+        position_ += PositionObject(direction_x_ * (velocity_.x * dt * 5.f), direction_y_ * (velocity_.y * dt * 5.f));
+        position_.x += offset_;
+        position_.y += offset_;
+    }
+
 private:
     bool was_colliding_pl_one_;
     bool was_colliding_pl_two_;
     GLfloat offset_ = 0.f;
+    GLfloat rotate_ = 0.f;
 };

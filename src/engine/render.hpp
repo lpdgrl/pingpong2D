@@ -6,14 +6,22 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <string>
-#include <vector>
+#include <map>
 
 #include "shader.hpp"
+#include "text_rendering.hpp"
+
+#define WHITE glm::vec3(1.f, 1.f, 1.f)
 
 enum class TypeBuffers {
     EBO = 0,
     VBO = 1,
     VAO = 2
+};
+
+enum class MapKey {
+    OBJECTS = 0,
+    TEXT = 1,
 };
 
 enum class AxisRotate {
@@ -45,9 +53,9 @@ public:
     inline void SetHeightWindow(unsigned int h) { scr_height_ = h; }
     inline void SetNameWindow(const char* nw) { name_window_ = nw; }
 
-    inline GLuint GetVBO(size_t i) const { return vbo_[i]; }
-    inline GLuint GetVAO(size_t i) const { return vao_[i]; }
-    inline GLuint GetEBO(size_t i) const { return ebo_[i]; }
+    inline GLuint GetVBO(MapKey key) const { return vbo_.at(key); }
+    inline GLuint GetVAO(MapKey key) const { return vao_.at(key); }
+    inline GLuint GetEBO(MapKey key) const { return ebo_.at(key); }
 
     inline Shader* GetShaderPointer() const { return shader_; }
 
@@ -59,13 +67,15 @@ public:
 public:
     void InitWindow();
     void InitRender();
+    void InitRenderText();
     void Draw(const glm::vec2& position, const glm::vec2& size, AxisRotate axis, GLfloat rotate);
+    void DrawText(std::string text, float x, float y, float scale, glm::vec3 color);
     void SetOrthoProjection(float left, float right, float bottom, float top, float zNear, float zFar);
 
 private:
     GLFWwindow* CreateWindow(const char* nw, unsigned int scr_w, unsigned int scr_h);
 
-    void GenerateBuffers(const GLsizei n, TypeBuffers type);
+    void GenerateBuffer(const GLsizei n, TypeBuffers type, MapKey key);
     void BufferData(GLenum target, GLsizeiptr sizeptr, const void* data, GLenum usage);
 
     void BindVertexArray(GLuint array);
@@ -80,6 +90,7 @@ private:
 
 private:
     Shader* shader_;
+    Shader* shader_text_;
 
     TypeBuffers type_buffers_;
 
@@ -88,9 +99,11 @@ private:
     unsigned int scr_width_ = 640;
     unsigned int scr_height_ = 480;
 
-    std::vector<GLuint> vao_;
-    std::vector<GLuint> vbo_;
-    std::vector<GLuint> ebo_;
+    std::map<MapKey, GLuint> vao_;
+    std::map<MapKey, GLuint> vbo_;
+    std::map<MapKey, GLuint> ebo_;
+
+    TextRender* text_;
 
     // TODO: Хранить путь к шейдерам в классе рендера неправильно!
     const char* PATH_TO_FILE_VERTEX_SHADER = "/home/lpdgrl/Project/code/pingpong2D/src/shaders/shader.vs";
@@ -98,4 +111,11 @@ private:
     // TODO: Хранить путь к шейдерам в классе рендера неправильно!
     const char* PATH_TO_FILE_VERTEX_SHADER_BALL = "/home/lpdgrl/Project/code/pingpong2D/src/shaders/shader_ball.vs";
     const char* PATH_TO_FILE_FRAGMENT_SHADER_BALL = "/home/lpdgrl/Project/code/pingpong2D/src/shaders/shader_ball.fs";
+
+    // TODO: Хранить путь к шейдерам в классе рендера неправильно!
+    const char* PATH_TO_VERTEX_SHADER_TEXT = "/home/lpdgrl/Project/code/pingpong2D/src/shaders/text.vs";
+    const char* PATH_TO_FRAGMENT_SHADER_TEXT = "/home/lpdgrl/Project/code/pingpong2D/src/shaders/text.fs";
+
+    // TODO: Хранение пути в внутри классе рендера неправильно!
+    const char* PATH_TO_FONT = "/home/lpdgrl/Project/code/pingpong2D/data/fonts/dejavusans.ttf";
 };

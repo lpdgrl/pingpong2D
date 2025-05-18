@@ -4,6 +4,7 @@
 #include "game_object.hpp"
 #include "ball.hpp"
 #include "player.hpp"
+#include "../engine/logger.hpp"
 
 enum class KeyPress {
     W = 87,
@@ -76,11 +77,16 @@ public:
     inline Render* GetRenderPointer() const { return render_; }
 
 public:
-    void Update(GLfloat dt);
+    void Update();
     void InitGame();
     void StartGame();
     void ResetGame();
-    void GameLog(GLfloat parametr) const;
+    void UpdateDataLog();
+    void MovePlayer(KeyPress press);
+    void MoveBall(); 
+
+    void SetDt(GLfloat dt) { dt_ = dt; }
+    GLfloat GetDt() { return dt_; }
 
 private:
     KeyPress ProcessInput(GLFWwindow* window);
@@ -95,4 +101,5 @@ private:
     Player* player_two_ = nullptr;
     Ball* ball_ = nullptr;
     bool start_game_ = false;
+    GLfloat dt_;
 };

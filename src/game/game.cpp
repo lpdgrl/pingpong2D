@@ -1,7 +1,31 @@
 #include "game.hpp"
+#include <random>
 
-void Game::Update(GLfloat dt) {
+void Game::InitGame() {
+    render_->InitWindow();
+    render_->InitRender();
+    render_->InitRenderText();
+
+    // Initialazation game log
+    std::vector<std::string> log_param = {"PosY player1", "PosY player2", "PosX ball", 
+                                            "PosY ball", "VelX ball", "VelY ball", "DirX ball", "DirY ball",
+                                            "Delta time", "Rotate ball", "Collision player1", "Collision player2"};
+    Logger::InitLogArray(log_param);
+}
+
+void Game::Update() {
+    render_->DrawText("PING PONG 2D", 300.0f, 575.0f, 0.5f, WHITE);
+    render_->DrawText(std::to_string(player_one_->GetScore()), 120.f, 550., 0.5f, WHITE);
+    render_->DrawText(std::to_string(player_two_->GetScore()), 700.f, 550., 0.5f, WHITE);
+
     KeyPress press = ProcessInput(render_->GetWindow());
+
+    if (press == KeyPress::SPACE) {
+        start_game_ = true;
+    }
+    else if (press == KeyPress::R) {
+        ResetGame();
+    }
 
     bool wasColliding = ball_->GetCollPlayerOne();
     bool wasCollPlayerTwo = ball_->GetCollPlayerTwo();
@@ -11,96 +35,50 @@ void Game::Update(GLfloat dt) {
 
     GLfloat offset = ball_->GetOffset();
 
-    if (press == KeyPress::SPACE) {
-        start_game_ = true;
-    }
-    else if (press == KeyPress::R) {
-        ResetGame();
-    }
-    
-    glm::vec2 coord_player = player_one_->GetCoordVec();
-    glm::vec2 size_player = player_one_->GetSizeVec();
-
-    glm::vec2 coord_player_two = player_two_->GetCoordVec();
-    glm::vec2 size_player_two = player_two_->GetSizeVec();
-
     glm::vec2 coord_ball = ball_->GetCoordVec();
     glm::vec2 size_ball = ball_->GetSizeVec();
 
     // Перезапуск игры если мяч вышел за пределы
     if (coord_ball.x + size_ball.x < 0.f ) {
-        player_two_->SetWinner();
+        player_two_->SetWinner(true);
         ResetGame();
     }
     else if (coord_ball.x + size_ball.x > render_->GetWindowWidth()) {
-        player_one_->SetWinner();
+        player_one_->SetWinner(true);
         ResetGame();
     }
     
     if (start_game_) {
-        glm::vec2 mv_pos_player;
-        glm::vec2 mv_pos_player_two;
-        glm::vec2 move_ball;
-        
-        // обрабатываем кнопки движения игрока (возможно стоит переписывать в метод move для игрового объекта типа игрок)
-        switch(press) {
-            case KeyPress::W: {
-                if ((coord_player.y + size_player.y) <= render_->GetWindowHeight()) {
-                    player_one_->SetDirectionY(static_cast<int>(DirectionPlayer::UP));
-                    mv_pos_player.y += player_one_->GetDirectionY() * player_one_->GetVelocity().y * dt;
-                }
-                break;
-            }
-
-            case KeyPress::S: {
-                if ((coord_player.y - size_player.y) >= 0) {
-                    player_one_->SetDirectionY(static_cast<int>(DirectionPlayer::DOWN));
-                    mv_pos_player.y += player_one_->GetDirectionY() * player_one_->GetVelocity().y * dt;
-                }
-                break;
-            }
-
-            case KeyPress::I: {
-                if ((coord_player_two.y + size_player_two.y) <= render_->GetWindowHeight()) {
-                    player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::UP));
-                    mv_pos_player_two.y += player_two_->GetDirectionY() * player_two_->GetVelocity().y * dt;
-                }
-                break;
-            }
-
-            case KeyPress::K: {
-                if ((coord_player_two.y - size_player_two.y) >= 0) {
-                    player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::DOWN));
-                    mv_pos_player_two.y += player_two_->GetDirectionY() * player_two_->GetVelocity().y * dt;
-                }
-                break;
-            }
-
-            default: {
-                player_one_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
-                player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
-                break;
-            }
-        }
-
         // чекаем коллизию
         bool collision_player_one = CheckCollision(player_one_, ball_, false);
         bool collision_player_two = CheckCollision(player_two_, ball_, true);
 
-        std::cout << "Collision Player One: " << (collision_player_two) << std::endl;
-        std::cout << "Collision Player Two: " << (collision_player_two) << std::endl;
-
         // проверяем была ли коллизия (переписать в метод)
         if (collision_player_one && !wasColliding) {
-           directionX_ball *= -1;
-           ball_->SetDirectionX(directionX_ball);
-           ball_->SetDirectionY(player_one_->GetDirectionY());
+            directionX_ball *= -1;
+            ball_->SetDirectionX(directionX_ball);
+            ball_->SetDirectionY(player_one_->GetDirectionY());
+            GLfloat offset = 0.f;
+            if (player_one_->GetDirectionY() > 0 || 0 < player_one_->GetDirectionY()) {
+                offset = 100.f * dt_;    
+            } else if (player_one_->GetDirectionY() == 0) {
+                offset = 20.f * dt_;
+            }
+            ball_->SetOffset(offset);
         }
         
         if (collision_player_two && !wasCollPlayerTwo) {
             directionX_ball *= -1;
             ball_->SetDirectionX(directionX_ball);
             ball_->SetDirectionY(player_two_->GetDirectionY());
+            GLfloat offset = 0.f;
+            if (player_two_->GetDirectionY() > 0 || 0 < player_two_->GetDirectionY()) {
+                offset = 100.f * dt_;
+            } else if (player_two_->GetDirectionY() == 0) {
+                offset = 20.f * dt_;
+            }
+
+            ball_->SetOffset(offset);
         }
 
         // устанавливаем состояние проверки коллизии
@@ -114,30 +92,66 @@ void Game::Update(GLfloat dt) {
         else if (coord_ball.y + size_ball.y <= 0) {
             ball_->SetDirectionY(static_cast<int>(DirectionBall::RIGHT));
         }
-
-        // Координаты куда нужно сдвинуть мяч
-        move_ball.x += ball_->GetDirectionX() * (ball_->GetVelocity().x * dt * 5.f);
-        move_ball.y += ball_->GetDirectionY() * (ball_->GetVelocity().y * dt * 5.f);
         
-        // Устанавливаем перед отрисокой новые координаты в объектах мяча и игрока
-        ball_->SetPosX(coord_ball.x + move_ball.x);
-        ball_->SetPosY(coord_ball.y + move_ball.y);
-
-        player_one_->SetPosY(coord_player.y + mv_pos_player.y);
-        player_two_->SetPosY(coord_player_two.y + mv_pos_player_two.y);
+        MoveBall();
+        MovePlayer(press);
     }
     
     // Отрисовываем игровые объекты
     player_one_->DrawObject();
-
     player_two_->DrawObject();
     
-    GLfloat rotate_ball = glfwGetTime();
-    rotate_ball = std::sin(rotate_ball) * 200.f;
+    ball_->SetRotate(std::sin(glfwGetTime()) * 200.f);
+    ball_->DrawObject(AxisRotate::AXIS_Z, ball_->GetRotate());
 
-    ball_->DrawObject(AxisRotate::AXIS_Z, rotate_ball);
+    UpdateDataLog();
+}
 
-    GameLog(rotate_ball);
+void Game::MoveBall() {
+    ball_->Move(GetDt());
+}
+
+void Game::MovePlayer(KeyPress press) {
+      // обрабатываем кнопки движения игрока (возможно стоит переписывать в метод move для игрового объекта типа игрок)
+      switch(press) {
+        case KeyPress::W: {
+            if ((player_one_->GetCoordVec().y + player_one_->GetSizeVec().y) <= render_->GetWindowHeight()) {
+                player_one_->SetDirectionY(static_cast<int>(DirectionPlayer::UP));
+                player_one_->Move(GetDt());
+            }
+            break;
+        }
+
+        case KeyPress::S: {
+            if ((player_one_->GetCoordVec().y - player_one_->GetSizeVec().y) >= 0) {
+                player_one_->SetDirectionY(static_cast<int>(DirectionPlayer::DOWN));
+                player_one_->Move(GetDt());
+            }
+            break;
+        }
+
+        case KeyPress::I: {
+            if ((player_two_->GetCoordVec().y + player_two_->GetSizeVec().y) <= render_->GetWindowHeight()) {
+                player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::UP));
+                player_two_->Move(GetDt());
+            }
+            break;
+        }
+
+        case KeyPress::K: {
+            if ((player_two_->GetCoordVec().y - player_two_->GetSizeVec().y) >= 0) {
+                player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::DOWN));
+                player_two_->Move(GetDt());
+            }
+            break;
+        }
+
+        default: {
+            player_one_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
+            player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
+            break;
+        }
+    }
 }
 
 bool Game::CheckCollision(GameObject* one, GameObject* two, bool second_player) {
@@ -146,20 +160,17 @@ bool Game::CheckCollision(GameObject* one, GameObject* two, bool second_player) 
 
     glm::vec2 coord_two = two->GetCoordVec();
     glm::vec2 size_two = two->GetSizeVec();
-
+    
     bool collisionX = false;
     if (!second_player) {
         collisionX = coord_two.x - size_two.x <= coord_one.x + size_one.x;
-        std::cout << "CollisionX One: " << collisionX << std::endl;
     }
     else {
         collisionX = coord_two.x + size_two.x >= coord_one.x - size_one.x;
-        std::cout << "CollisionX Two: " << collisionX << std::endl;
     }
 
     // разобраться как убрать голые значения - используются для того, чтобы учитывать вверхний и нижний игрока
     bool collisionY = coord_two.y + size_two.y <= coord_one.y + size_one.y + 15.f && coord_two.y - size_two.y >= coord_one.y - size_one.y - 15.f;
-    std::cout << "CollisionY: " << collisionY << std::endl;
 
     return collisionX && collisionY;
 }
@@ -174,11 +185,6 @@ void Game::StartGame() {
     ball_->DrawObject();
 }
 
-void Game::InitGame() {
-    render_->InitWindow();
-    render_->InitRender();
-}
-
 void Game::ResetGame() {
     start_game_ = false;
 
@@ -190,6 +196,7 @@ void Game::ResetGame() {
 
     ball_->SetCollPlayerOne(false);
     ball_->SetCollPlayerTwo(false);
+    ball_->SetOffset(0.f);
 
     if (player_one_->HasWinner()) {
         ball_->SetDirectionX(static_cast<int>(DirectionBall::RIGHT));
@@ -198,8 +205,8 @@ void Game::ResetGame() {
         ball_->SetDirectionX(static_cast<int>(DirectionBall::LEFT));
     }
     
-    player_one_->SetWinner();
-    player_two_->SetWinner();
+    player_one_->SetWinner(false);
+    player_two_->SetWinner(false);
 
     ball_->SetDirectionY(static_cast<int>(DirectionBall::NOWHERE));
 
@@ -249,17 +256,23 @@ glm::vec2 Game::GetSizeObj(GameObject* obj) {
     return {obj_width, obj_height};
 }
 
-void Game::GameLog(GLfloat parametr) const {
-    std::cout << std::boolalpha;
+void Game::UpdateDataLog() {
+    std::vector<std::string> data_to_log = {
+        std::to_string(player_one_->GetPos().y),
+        std::to_string(player_two_->GetPos().y),
+        std::to_string(ball_->GetPos().x),
+        std::to_string(ball_->GetPos().y),
+        std::to_string(ball_->GetVelocity().x),
+        std::to_string(ball_->GetVelocity().y),
+        std::to_string(ball_->GetDirectionX()),
+        std::to_string(ball_->GetDirectionY()),
+        std::to_string(dt_),
+        std::to_string(ball_->GetRotate()),
+        std::to_string(ball_->GetCollPlayerOne()),
+        std::to_string(ball_->GetCollPlayerTwo())
+    };
 
-    std::cout << "Position y-axis of player: " << player_one_->GetPos().y << std::endl;
-    std::cout << "Velocity y-axis of player: " << player_one_->GetVelocity().y << std::endl;
+    Logger::UpdateDataLog(data_to_log);
 
-    std::cout << "Position y-axis of ball: " << ball_->GetPos().y << std::endl;
-    std::cout << "Velocity y-axis of ball: " << ball_->GetVelocity().y << std::endl;
-
-    std::cout << "Position + Size of player: " << player_one_->GetPos().x + player_one_->GetSize().x
-    << " Position x-axis + Size of ball: " << ball_->GetPos().x + player_one_->GetSize().x << std::endl;
-
-    std::cout << "Rotate of ball: " << parametr << std::endl;
+    Logger::Log(render_, 0.f , 580.f, 0.2f, WHITE);
 }

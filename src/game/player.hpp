@@ -17,9 +17,14 @@ public:
 
     ~Player() noexcept {}
 
-    inline bool HasWinner() const { return winner_; }
-    inline void SetWinner() { winner_ = !winner_; }
+    inline bool HasWinner() const { return last_winner_; }
+    inline unsigned int GetScore() const { return score_; }
+    inline void SetWinner(bool winner) { if (winner) { ++score_; } last_winner_ = winner; }
+
+    inline void Move(GLfloat dt) override { this->position_.y = this->position_.y + (this->direction_y_ * this->velocity_.y * dt); }
 
 private:
-    bool winner_ = false;
+    bool was_collising_ = false; 
+    bool last_winner_ = false;
+    unsigned int score_ = 0;
 };

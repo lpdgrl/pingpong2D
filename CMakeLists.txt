@@ -9,6 +9,10 @@ src/engine/render.hpp
 src/engine/render.cpp 
 src/engine/shader.hpp 
 src/engine/shader.cpp 
+src/engine/text_rendering.hpp
+src/engine/text_rendering.cpp
+src/engine/logger.hpp
+src/engine/logger.cpp
 src/game/game_object.hpp 
 src/game/ball.hpp 
 src/game/player.hpp
@@ -20,6 +24,11 @@ include_directories("/home/lpdgrl/Project/code/pingpong2D/src/includes/")
 # glad 
 include_directories("/home/lpdgrl/Project/code/pingpong2D/src/includes/glad/")
 include_directories("/home/lpdgrl/Project/code/pingpong2D/src/includes/glad/khr")
+
+# freetype
+include_directories("/usr/include/freetype2/")
+
+SET(CMAKE_EXE_LINKER_FLAGS "-v -lfreetype")
 
 # link libglfw3.a
 target_link_libraries(PingPong2D "/home/lpdgrl/Project/code/pingpong2D/src/libs/libglfw3.a")

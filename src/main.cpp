@@ -1,4 +1,5 @@
 #include "game/game.hpp"
+#include "engine/logger.hpp"
 
 void processInput(GLFWwindow* window);
 
@@ -11,7 +12,7 @@ const char* textureEARTHBALL = "/home/lpdgrl/Project/code/pingpong2D/data/textur
 int main () {
     
     using namespace std::literals;
-    
+
     Game game(name_window, SCR_WIDTH, SCR_HEIGHT);
 
     game.InitGame();
@@ -31,8 +32,8 @@ int main () {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        std::cout << "Delta time: " << delta_time << std::endl;
-        game.Update(delta_time);
+        game.SetDt(delta_time);
+        game.Update();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
