@@ -1,10 +1,9 @@
 #pragma once
 
-#include <glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "../engine/render.hpp"
+#include "AvionEngineCore/render/render.hpp"
 
 struct SizeObject {
     SizeObject() {

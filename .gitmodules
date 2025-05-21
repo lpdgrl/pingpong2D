@@ -1,0 +1,3 @@
+[submodule "avion"]
+	path = avion
+	url = git@github.com:lpdgrl/avion.git

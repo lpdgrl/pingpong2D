@@ -1,34 +1,17 @@
-cmake_minimum_required(VERSION 3.10.0)
+cmake_minimum_required(VERSION 3.12)
 project(PingPong2D VERSION 0.1.0 LANGUAGES C CXX)
 
-add_executable(PingPong2D 
-src/main.cpp 
-src/game/game.hpp 
-src/game/game.cpp 
-src/engine/render.hpp 
-src/engine/render.cpp 
-src/engine/shader.hpp 
-src/engine/shader.cpp 
-src/engine/text_rendering.hpp
-src/engine/text_rendering.cpp
-src/engine/logger.hpp
-src/engine/logger.cpp
-src/game/game_object.hpp 
-src/game/ball.hpp 
-src/game/player.hpp
-src/glad.c)
+set(PROJECT_NAME PingPong2D)
 
-# glfw
-include_directories("/home/lpdgrl/Project/code/pingpong2D/src/includes/")
+add_executable(${PROJECT_NAME} 
+    src/main.cpp 
+    src/game/game.hpp 
+    src/game/game.cpp 
+    src/game/game_object.hpp 
+    src/game/ball.hpp 
+    src/game/player.hpp
+)
 
-# glad 
-include_directories("/home/lpdgrl/Project/code/pingpong2D/src/includes/glad/")
-include_directories("/home/lpdgrl/Project/code/pingpong2D/src/includes/glad/khr")
+add_subdirectory(avion ${CMAKE_CURRENT_BINARY_DIR}/build)
+target_link_libraries(${PROJECT_NAME} PUBLIC AvionEngineCore)
 
-# freetype
-include_directories("/usr/include/freetype2/")
-
-SET(CMAKE_EXE_LINKER_FLAGS "-v -lfreetype")
-
-# link libglfw3.a
-target_link_libraries(PingPong2D "/home/lpdgrl/Project/code/pingpong2D/src/libs/libglfw3.a")

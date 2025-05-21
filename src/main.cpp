@@ -1,5 +1,4 @@
 #include "game/game.hpp"
-#include "engine/logger.hpp"
 
 void processInput(GLFWwindow* window);
 
@@ -7,7 +6,6 @@ void processInput(GLFWwindow* window);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 const char* name_window = "Ping Pong 2D";
-const char* textureEARTHBALL = "/home/lpdgrl/Project/code/pingpong2D/data/textures/fireball.png";
 
 int main () {
     
@@ -25,6 +23,8 @@ int main () {
 
     // render loop
     while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+
         GLfloat current_frame = glfwGetTime();
         delta_time = current_frame - last_frame;
         last_frame = current_frame;
@@ -36,8 +36,7 @@ int main () {
         game.Update();
 
         glfwSwapBuffers(window);
-        glfwPollEvents();
-
+    
     }
 
     return 0;

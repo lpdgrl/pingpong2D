@@ -1,10 +1,12 @@
 #pragma once
 
-#include "../engine/render.hpp"
+#include "AvionEngineCore/render/render.hpp"
+#include "AvionEngineCore/logger/logger.hpp"
+
 #include "game_object.hpp"
 #include "ball.hpp"
 #include "player.hpp"
-#include "../engine/logger.hpp"
+
 
 enum class KeyPress {
     W = 87,
