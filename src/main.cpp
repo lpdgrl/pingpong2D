@@ -10,10 +10,12 @@ const char* name_window = "Ping Pong 2D";
 int main () {
     
     using namespace std::literals;
+    Controller controller;
 
-    Game game(name_window, SCR_WIDTH, SCR_HEIGHT);
+    Game game(name_window, SCR_WIDTH, SCR_HEIGHT, &controller);
 
     game.InitGame();
+
     GLFWwindow* window = game.GetPointerWindow();
 
     game.StartGame();
@@ -24,6 +26,8 @@ int main () {
     // render loop
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+        
+        controller.KeyPressed(window);
 
         GLfloat current_frame = glfwGetTime();
         delta_time = current_frame - last_frame;

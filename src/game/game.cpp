@@ -18,12 +18,12 @@ void Game::Update() {
     render_->DrawText(std::to_string(player_one_->GetScore()), 120.f, 550., 0.5f, WHITE);
     render_->DrawText(std::to_string(player_two_->GetScore()), 700.f, 550., 0.5f, WHITE);
 
-    KeyPress press = ProcessInput(render_->GetWindow());
+    auto keys = controller_->GetPressKeys();
 
-    if (press == KeyPress::SPACE) {
+    if (keys[static_cast<int>(KeyPress::SPACE)]) {
         start_game_ = true;
     }
-    else if (press == KeyPress::R) {
+    if (keys[static_cast<int>(KeyPress::R)]) {
         ResetGame();
     }
 
@@ -94,64 +94,60 @@ void Game::Update() {
         }
         
         MoveBall();
-        MovePlayer(press);
+        MovePlayer(keys);
     }
-    
+
     // Отрисовываем игровые объекты
     player_one_->DrawObject();
     player_two_->DrawObject();
     
     ball_->SetRotate(std::sin(glfwGetTime()) * 200.f);
     ball_->DrawObject(AxisRotate::AXIS_Z, ball_->GetRotate());
-
-    UpdateDataLog();
+    
+    if (keys[static_cast<int>(KeyPress::Q)]) {
+        debug_mode_ = !debug_mode_;
+    }
+    
+    if (debug_mode_) {
+        UpdateDataLog();
+    }
 }
 
 void Game::MoveBall() {
     ball_->Move(GetDt());
 }
 
-void Game::MovePlayer(KeyPress press) {
+void Game::MovePlayer(std::array<bool, SIZE_ARRAY_KEYS>& keys) {
       // обрабатываем кнопки движения игрока (возможно стоит переписывать в метод move для игрового объекта типа игрок)
-      switch(press) {
-        case KeyPress::W: {
+        if (keys[static_cast<int>(KeyPress::W)]) {
             if ((player_one_->GetCoordVec().y + player_one_->GetSizeVec().y) <= render_->GetWindowHeight()) {
                 player_one_->SetDirectionY(static_cast<int>(DirectionPlayer::UP));
                 player_one_->Move(GetDt());
             }
-            break;
         }
-
-        case KeyPress::S: {
+            
+        if (keys[static_cast<int>(KeyPress::S)]) {
             if ((player_one_->GetCoordVec().y - player_one_->GetSizeVec().y) >= 0) {
                 player_one_->SetDirectionY(static_cast<int>(DirectionPlayer::DOWN));
                 player_one_->Move(GetDt());
             }
-            break;
         }
 
-        case KeyPress::I: {
+        if (keys[static_cast<int>(KeyPress::I)]) {
             if ((player_two_->GetCoordVec().y + player_two_->GetSizeVec().y) <= render_->GetWindowHeight()) {
                 player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::UP));
                 player_two_->Move(GetDt());
             }
-            break;
         }
 
-        case KeyPress::K: {
+        if (keys[static_cast<int>(KeyPress::K)]) {
             if ((player_two_->GetCoordVec().y - player_two_->GetSizeVec().y) >= 0) {
                 player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::DOWN));
                 player_two_->Move(GetDt());
             }
-            break;
         }
-
-        default: {
-            player_one_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
-            player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
-            break;
-        }
-    }
+            //player_one_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
+            //player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
 }
 
 bool Game::CheckCollision(GameObject* one, GameObject* two, bool second_player) {
@@ -221,29 +217,6 @@ void Game::ResetGame() {
     player_one_->DrawObject();
     player_two_->DrawObject();
     ball_->DrawObject();
-}
-
-KeyPress Game::ProcessInput(GLFWwindow* window) {
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        return KeyPress::W;
-    }
-    else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        return KeyPress::S;
-    }
-    else if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
-        return KeyPress::SPACE;
-    }
-    else if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
-        return KeyPress::R;
-    }
-    else if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) {
-        return KeyPress::I;
-    }
-    else if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
-        return KeyPress::K;
-    }
-
-    return KeyPress::NONE;
 }
 
 glm::vec2 Game::GetPositionObj(GameObject* obj) {

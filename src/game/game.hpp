@@ -1,7 +1,10 @@
 #pragma once
 
+#include <algorithm>
+
 #include "AvionEngineCore/render/render.hpp"
 #include "AvionEngineCore/logger/logger.hpp"
+#include "AvionEngineCore/controller/controller.hpp"
 
 #include "game_object.hpp"
 #include "ball.hpp"
@@ -15,7 +18,8 @@ enum class KeyPress {
     I = 73,
     K = 75,
     ENTER = 257,
-    SPACE = 259,
+    SPACE = 32,
+    Q = 81,
     NONE = -1,
 };
 
@@ -45,19 +49,24 @@ public:
     // Game(const char* name_window) : name_window_(name_window) {}
 
     // Переделать инвариант - если разрешении меньше, бросаем исключение и завершаем работу.
-    Game(const char* name_window, unsigned int scr_width, unsigned int scr_height) {
+    Game(const char* name_window, unsigned int scr_width, unsigned int scr_height, Controller* controller) {
         // Инвариат == ?
-        if (scr_width >= 640 && scr_height >= 480) {
-            render_ = new Render(name_window, scr_width, scr_height);
-
-            player_one_ = new Player(PLAYER_SIZE, {0.f, scr_height / 2.f}, {0.f, 500.f}, static_cast<int>(DirectionPlayer::NOWHERE),
-                                static_cast<int>(DirectionPlayer::NOWHERE), render_);
-            player_two_ = new Player(PLAYER_SIZE, {scr_width * 1.f, scr_height / 2.f}, {0.f, 500.f}, static_cast<int>(DirectionPlayer::NOWHERE),
-                                static_cast<int>(DirectionPlayer::NOWHERE), render_);
-
-            ball_ = new Ball(BALL_SIZE, {scr_width / 2 - BALL_SIZE.x, scr_height / 2 - BALL_SIZE.y}, {100.f, 80.f}, static_cast<int>(DirectionBall::LEFT),
-                            static_cast<int>(DirectionBall::NOWHERE), false, false, render_);
+        if (scr_width < 640 && scr_height < 480) {
+            std::abort();
         }
+
+        render_ = new Render(name_window, scr_width, scr_height);
+
+        player_one_ = new Player(PLAYER_SIZE, {0.f, scr_height / 2.f}, {0.f, 500.f}, static_cast<int>(DirectionPlayer::NOWHERE),
+                            static_cast<int>(DirectionPlayer::NOWHERE), render_);
+
+        player_two_ = new Player(PLAYER_SIZE, {scr_width * 1.f, scr_height / 2.f}, {0.f, 500.f}, static_cast<int>(DirectionPlayer::NOWHERE),
+                            static_cast<int>(DirectionPlayer::NOWHERE), render_);
+
+        ball_ = new Ball(BALL_SIZE, {scr_width / 2 - BALL_SIZE.x, scr_height / 2 - BALL_SIZE.y}, {100.f, 80.f}, static_cast<int>(DirectionBall::LEFT),
+                        static_cast<int>(DirectionBall::NOWHERE), false, false, render_);
+                        
+        controller_ = controller;
     }
 
     Game(const Game&) = delete;
@@ -71,6 +80,7 @@ public:
         delete player_one_;
         delete player_two_;
         delete ball_;
+        controller_ = nullptr;
     };
 
     inline GLFWwindow* GetPointerWindow() const { return render_->GetWindow(); }
@@ -84,14 +94,13 @@ public:
     void StartGame();
     void ResetGame();
     void UpdateDataLog();
-    void MovePlayer(KeyPress press);
+    void MovePlayer(std::array<bool, SIZE_ARRAY_KEYS>& keys);
     void MoveBall(); 
 
     void SetDt(GLfloat dt) { dt_ = dt; }
     GLfloat GetDt() { return dt_; }
 
 private:
-    KeyPress ProcessInput(GLFWwindow* window);
     glm::vec2 GetPositionObj(GameObject* obj);
     glm::vec2 GetSizeObj(GameObject* obj);
 
@@ -104,4 +113,6 @@ private:
     Ball* ball_ = nullptr;
     bool start_game_ = false;
     GLfloat dt_;
+    Controller* controller_ = nullptr;
+    bool debug_mode_= false;
 };
