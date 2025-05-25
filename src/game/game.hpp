@@ -64,7 +64,7 @@ public:
                             static_cast<int>(DirectionPlayer::NOWHERE), render_);
 
         ball_ = new Ball(BALL_SIZE, {scr_width / 2 - BALL_SIZE.x, scr_height / 2 - BALL_SIZE.y}, {100.f, 80.f}, static_cast<int>(DirectionBall::LEFT),
-                        static_cast<int>(DirectionBall::NOWHERE), false, false, render_);
+                        static_cast<int>(DirectionBall::NOWHERE), render_);
                         
         controller_ = controller;
     }
@@ -105,6 +105,7 @@ private:
     glm::vec2 GetSizeObj(GameObject* obj);
 
     bool CheckCollision(GameObject* one, GameObject* two, bool second_player);
+    void DoCollision(Player* object);
 
 private:
     Render* render_ = nullptr;

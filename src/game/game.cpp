@@ -9,7 +9,7 @@ void Game::InitGame() {
     // Initialazation game log
     std::vector<std::string> log_param = {"PosY player1", "PosY player2", "PosX ball", 
                                             "PosY ball", "VelX ball", "VelY ball", "DirX ball", "DirY ball",
-                                            "Delta time", "Rotate ball", "Collision player1", "Collision player2"};
+                                            "Delta time", "Rotate ball", "Collision of ball"};
     Logger::InitLogArray(log_param);
 }
 
@@ -27,14 +27,6 @@ void Game::Update() {
         ResetGame();
     }
 
-    bool wasColliding = ball_->GetCollPlayerOne();
-    bool wasCollPlayerTwo = ball_->GetCollPlayerTwo();
-
-    int directionX_ball = ball_->GetDirectionX();
-    int directionY_ball = ball_->GetDirectionY();
-
-    GLfloat offset = ball_->GetOffset();
-
     glm::vec2 coord_ball = ball_->GetCoordVec();
     glm::vec2 size_ball = ball_->GetSizeVec();
 
@@ -50,41 +42,14 @@ void Game::Update() {
     
     if (start_game_) {
         // чекаем коллизию
-        bool collision_player_one = CheckCollision(player_one_, ball_, false);
-        bool collision_player_two = CheckCollision(player_two_, ball_, true);
+        player_one_->SetCollision(CheckCollision(player_one_, ball_, false));
+        player_two_->SetCollision(CheckCollision(player_two_, ball_, true));
 
-        // проверяем была ли коллизия (переписать в метод)
-        if (collision_player_one && !wasColliding) {
-            directionX_ball *= -1;
-            ball_->SetDirectionX(directionX_ball);
-            ball_->SetDirectionY(player_one_->GetDirectionY());
-            GLfloat offset = 0.f;
-            if (player_one_->GetDirectionY() > 0 || 0 < player_one_->GetDirectionY()) {
-                offset = 100.f * dt_;    
-            } else if (player_one_->GetDirectionY() == 0) {
-                offset = 20.f * dt_;
-            }
-            ball_->SetOffset(offset);
-        }
-        
-        if (collision_player_two && !wasCollPlayerTwo) {
-            directionX_ball *= -1;
-            ball_->SetDirectionX(directionX_ball);
-            ball_->SetDirectionY(player_two_->GetDirectionY());
-            GLfloat offset = 0.f;
-            if (player_two_->GetDirectionY() > 0 || 0 < player_two_->GetDirectionY()) {
-                offset = 100.f * dt_;
-            } else if (player_two_->GetDirectionY() == 0) {
-                offset = 20.f * dt_;
-            }
+        DoCollision(player_one_);
+        DoCollision(player_two_);
 
-            ball_->SetOffset(offset);
-        }
-
-        // устанавливаем состояние проверки коллизии
-        ball_->SetCollPlayerOne(collision_player_one); 
-        ball_->SetCollPlayerTwo(collision_player_two);
-
+        ball_->SetCollsion(player_one_->WasCollision() || player_two_->WasCollision()); 
+       
         // чекаем на совпадение границ экрана с координатами мяча, если совпадает то меняем направление
         if (coord_ball.y + size_ball.y >= render_->GetWindowHeight()) {
             ball_->SetDirectionY(static_cast<int>(DirectionBall::LEFT));
@@ -105,7 +70,7 @@ void Game::Update() {
     ball_->DrawObject(AxisRotate::AXIS_Z, ball_->GetRotate());
     
     if (keys[static_cast<int>(KeyPress::Q)]) {
-        debug_mode_ = !debug_mode_;
+        debug_mode_ = true;
     }
     
     if (debug_mode_) {
@@ -146,8 +111,25 @@ void Game::MovePlayer(std::array<bool, SIZE_ARRAY_KEYS>& keys) {
                 player_two_->Move(GetDt());
             }
         }
-            //player_one_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
-            //player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
+        
+        //player_one_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
+        //player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
+}
+
+void Game::DoCollision(Player* object) {
+    if (object->WasCollision() && !ball_->WasCollision()) {
+        ball_->SetDirectionX(ball_->GetDirectionX() * -1);
+        ball_->SetDirectionY(object->GetDirectionY());
+        GLfloat offset = 0.f;
+
+        if (object->GetDirectionY() > 0 || 0 < object->GetDirectionY()) {
+            offset = 100.f * dt_;    
+        } else if (object->GetDirectionY() == 0) {
+            offset = 20.f * dt_;
+        }
+        ball_->SetOffset(offset);
+    }
+    
 }
 
 bool Game::CheckCollision(GameObject* one, GameObject* two, bool second_player) {
@@ -190,8 +172,7 @@ void Game::ResetGame() {
     player_two_->SetDirectionX(static_cast<int>(DirectionPlayer::NOWHERE));
     player_two_->SetDirectionY(static_cast<int>(DirectionPlayer::NOWHERE));
 
-    ball_->SetCollPlayerOne(false);
-    ball_->SetCollPlayerTwo(false);
+    ball_->SetCollsion(false);
     ball_->SetOffset(0.f);
 
     if (player_one_->HasWinner()) {
@@ -241,8 +222,7 @@ void Game::UpdateDataLog() {
         std::to_string(ball_->GetDirectionY()),
         std::to_string(dt_),
         std::to_string(ball_->GetRotate()),
-        std::to_string(ball_->GetCollPlayerOne()),
-        std::to_string(ball_->GetCollPlayerTwo())
+        std::to_string(ball_->WasCollision())
     };
 
     Logger::UpdateDataLog(data_to_log);

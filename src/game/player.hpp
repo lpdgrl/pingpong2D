@@ -20,7 +20,9 @@ public:
     inline bool HasWinner() const { return last_winner_; }
     inline unsigned int GetScore() const { return score_; }
     inline void SetWinner(bool winner) { if (winner) { ++score_; } last_winner_ = winner; }
-
+    inline void SetCollision(bool collision) { was_collising_ = collision; }
+    inline bool WasCollision() { return was_collising_; }
+    
     inline void Move(GLfloat dt) override { this->position_.y = this->position_.y + (this->direction_y_ * this->velocity_.y * dt); }
 
 private:
