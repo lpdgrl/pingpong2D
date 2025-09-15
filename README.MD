@@ -23,3 +23,6 @@ Ping Pong 2D — это простая аркадная игра, реализо
     I,K - вверх и вниз;
   Рестрат - R
   Начать игру - Space
+
+
+[logo]: https://github.com/pingpong2D/pingpong_000.png
