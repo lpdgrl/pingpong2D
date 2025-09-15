@@ -25,4 +25,4 @@ Ping Pong 2D — это простая аркадная игра, реализо
   Начать игру - Space
 
 
-(https://github.com/pingpong2D/pingpong_000.png)
+![alt text](https://github.com/pingpong2D/pingpong_000.png)
