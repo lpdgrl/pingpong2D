@@ -24,5 +24,5 @@ Ping Pong 2D — это простая аркадная игра, реализо
   Рестрат - R
   Начать игру - Space
 
-
+Скриншот:
 (https://github.com/lpdgrl/pingpong2D/blob/main/pingpong_000.png)
